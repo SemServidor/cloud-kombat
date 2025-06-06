@@ -13,9 +13,6 @@ custom:
   domainName: ${param:domainName, ''}
   certificateArn: ${param:certificateArn, ''}
 
-# Sem funções Lambda - apenas infraestrutura para hospedagem estática
-functions: {}
-
 resources:
   Resources:
     # S3 Bucket para armazenar o jogo estático
@@ -96,11 +93,9 @@ resources:
       Description: URL de distribuição do CloudFront
       Value: !Sub "https://${CloudFrontDistribution.DomainName}"
 
-    ${self:custom.domainName empty false:
     CustomDomainURL:
       Description: URL personalizado
       Value: !Sub "https://${self:custom.domainName}"
-    }
       
     BucketName:
       Description: Nome do bucket S3 para deploy
