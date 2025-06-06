@@ -1,0 +1,21 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #1cabc0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#game-container {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    border: 3px solid #576a7e;
+    border-radius: 8px;
+}
+
+canvas {
+    display: block;
+    margin: 0 auto;
+}

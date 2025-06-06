@@ -1,0 +1,8 @@
+Substitua este arquivo por sprites reais do jogo.
+
+Sprites necessários:
+- server.png (servidor de computador)
+- cloud.png (nuvem)
+- hammer.png (marreta)
+- bat.png (taco de beisebol)
+- crowbar.png (pé de cabra)

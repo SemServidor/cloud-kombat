@@ -1,0 +1,7 @@
+Substitua este arquivo por elementos de UI reais do jogo.
+
+Elementos de UI necessários:
+- background.png (fundo do jogo)
+- title.png (título do jogo)
+- start-button.png (botão de iniciar)
+- heart.png (ícone de vida)
