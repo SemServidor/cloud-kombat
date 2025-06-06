@@ -25,11 +25,11 @@ export default class GameScene extends Phaser.Scene {
 
     preload() {
         // Carregar imagens para o jogo
-        this.load.image('server', 'assets/sprites/server.png');
-        this.load.image('cloud', 'assets/sprites/cloud.png');
-        this.load.image('hammer', 'assets/sprites/hammer.png');
-        this.load.image('bat', 'assets/sprites/bat.png');
-        this.load.image('crowbar', 'assets/sprites/crowbar.png');
+        this.load.image('server', 'assets/sprites/server128.png');
+        this.load.image('cloud', 'assets/sprites/cloud128.png');
+        this.load.image('hammer', 'assets/sprites/hammer128.png');
+        this.load.image('bat', 'assets/sprites/bat128.png');
+        this.load.image('crowbar', 'assets/sprites/crowbar128.png');
         this.load.image('heart', 'assets/ui/heart.png');
         this.load.image('logo', 'assets/ui/logo.png');
     }
