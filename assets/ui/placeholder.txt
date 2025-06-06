@@ -5,3 +5,4 @@ Elementos de UI necessários:
 - title.png (título do jogo)
 - start-button.png (botão de iniciar)
 - heart.png (ícone de vida)
+- logo.png (sua logo para exibição nos cantos da tela)

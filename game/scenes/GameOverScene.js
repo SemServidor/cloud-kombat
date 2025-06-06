@@ -10,6 +10,10 @@ export default class GameOverScene extends Phaser.Scene {
         this.scoreManager = new ScoreManager();
     }
 
+    preload() {
+        this.load.image('logo', 'assets/ui/logo.png');
+    }
+
     create() {
         // Obter dimensões do jogo
         const width = this.scale.width;
@@ -92,6 +96,36 @@ export default class GameOverScene extends Phaser.Scene {
             .on('pointerdown', () => this.scene.start('MenuScene'))
             .on('pointerover', function() { this.setStyle({ backgroundColor: '#1cabc0' }); })
             .on('pointerout', function() { this.setStyle({ backgroundColor: '#576a7e' }); });
+            
+        // Adicionar espaço para logo
+        this.addLogoSpace();
+    }
+    
+    addLogoSpace() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um espaço quadrado para a logo no canto inferior direito
+        const logoSize = Math.min(width, height) * 0.15; // 15% da menor dimensão
+        const logoX = width - logoSize/2 - 20;
+        const logoY = height - logoSize/2 - 20;
+        
+        // Adicionar um fundo para a logo
+        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7)
+            .setStrokeStyle(2, 0x1cabc0);
+            
+        // Se a imagem da logo estiver disponível, adicione-a aqui
+        try {
+            const logo = this.add.image(logoX, logoY, 'logo')
+                .setDisplaySize(logoSize * 0.9, logoSize * 0.9);
+        } catch (e) {
+            // Se a imagem não estiver disponível, adicione um texto placeholder
+            this.add.text(logoX, logoY, 'LOGO', {
+                fontFamily: 'Arial',
+                fontSize: logoSize * 0.3,
+                color: '#576a7e'
+            }).setOrigin(0.5);
+        }
     }
 
     handleKeyInput(event) {

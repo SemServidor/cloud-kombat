@@ -12,6 +12,7 @@ export default class MenuScene extends Phaser.Scene {
         this.load.image('bat', 'assets/sprites/bat.png');
         this.load.image('crowbar', 'assets/sprites/crowbar.png');
         this.load.image('start-button', 'assets/ui/start-button.png');
+        this.load.image('logo', 'assets/ui/logo.jpeg');
     }
 
     create() {
@@ -46,7 +47,7 @@ export default class MenuScene extends Phaser.Scene {
 
         // Criar opções de armas em linha vertical
         const weaponStartY = height * 0.35;
-        const weaponSpacing = height * 0.15;
+        const weaponSpacing = height * 0.12;
 
         // Marreta
         const hammer = this.add.image(leftMargin + width * 0.05, weaponStartY, 'hammer')
@@ -86,11 +87,11 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0, 0.5);
 
         // Criar seleção visual
-        this.selectionBox = this.add.rectangle(leftMargin + width * 0.05, weaponStartY, width * 0.08, width * 0.08, 0x1cabc0, 0.3)
+        this.selectionBox = this.add.rectangle(leftMargin + width * 0.05, weaponStartY, width * 0.15, height * 0.1, 0x1cabc0, 0.3)
             .setStrokeStyle(2, 0x1cabc0);
 
         // Botão de iniciar
-        const startButton = this.add.text(leftMargin + width * 0.15, height * 0.8, 'Iniciar', {
+        const startButton = this.add.text(leftMargin + width * 0.15, height * 0.8, 'INICIAR JOGO', {
             fontFamily: 'Arial',
             fontSize: Math.max(28, Math.floor(width / 25)),
             color: '#ffffff',
@@ -110,6 +111,36 @@ export default class MenuScene extends Phaser.Scene {
 
         // === LADO DIREITO - LEADERBOARD ===
         this.showLeaderboard(rightSide, height);
+        
+        // Adicionar espaço para logo
+        this.addLogoSpace();
+    }
+    
+    addLogoSpace() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um espaço quadrado para a logo no canto inferior esquerdo
+        const logoSize = Math.min(width, height) * 0.15; // 15% da menor dimensão
+        const logoX = width * 0.1 + logoSize/2;
+        const logoY = height - logoSize/2 - 20;
+        
+        // Adicionar um fundo para a logo
+        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7)
+            .setStrokeStyle(2, 0x1cabc0);
+            
+        // Se a imagem da logo estiver disponível, adicione-a aqui
+        try {
+            const logo = this.add.image(logoX, logoY, 'logo')
+                .setDisplaySize(logoSize * 0.9, logoSize * 0.9);
+        } catch (e) {
+            // Se a imagem não estiver disponível, adicione um texto placeholder
+            this.add.text(logoX, logoY, 'LOGO', {
+                fontFamily: 'Arial',
+                fontSize: logoSize * 0.3,
+                color: '#576a7e'
+            }).setOrigin(0.5);
+        }
     }
 
     selectWeapon(weapon) {
@@ -118,7 +149,7 @@ export default class MenuScene extends Phaser.Scene {
         // Obter dimensões do jogo
         const height = this.scale.height;
         const weaponStartY = height * 0.35;
-        const weaponSpacing = height * 0.15;
+        const weaponSpacing = height * 0.12;
         
         // Atualizar posição da caixa de seleção
         const positions = {
@@ -151,7 +182,7 @@ export default class MenuScene extends Phaser.Scene {
         const width = this.scale.width;
         
         // Título do leaderboard
-        this.add.text(rightSide, height * 0.25, 'Top 10', {
+        this.add.text(rightSide, height * 0.25, 'TOP 10 PONTUAÇÕES', {
             fontFamily: 'Arial',
             fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#576a7e',

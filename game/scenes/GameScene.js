@@ -9,9 +9,10 @@ export default class GameScene extends Phaser.Scene {
         this.score = 0;
         this.lives = 3;
         this.gameTime = 0;
+        this.maxGameTime = 60000; // 1 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
-        this.minSpawnRate = 500; // Tempo mínimo entre spawns
-        this.difficultyInterval = 10000; // A cada 10 segundos aumenta a dificuldade
+        this.minSpawnRate = 400; // Tempo mínimo entre spawns (reduzido)
+        this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade (reduzido)
     }
 
     init(data) {
@@ -30,6 +31,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bat', 'assets/sprites/bat.png');
         this.load.image('crowbar', 'assets/sprites/crowbar.png');
         this.load.image('heart', 'assets/ui/heart.png');
+        this.load.image('logo', 'assets/ui/logo.png');
     }
 
     create() {
@@ -67,11 +69,23 @@ export default class GameScene extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
+        
+        // Adicionar espaço para logo
+        this.addLogoSpace();
     }
 
     update(time, delta) {
         // Atualizar tempo de jogo
         this.gameTime += delta;
+        
+        // Verificar se o tempo máximo foi atingido
+        if (this.gameTime >= this.maxGameTime) {
+            this.endGame();
+            return;
+        }
+        
+        // Atualizar contador de tempo
+        this.updateTimeDisplay();
         
         // Atualizar posição da arma para seguir o cursor
         this.weapon.update(this.input.x, this.input.y);
@@ -92,9 +106,31 @@ export default class GameScene extends Phaser.Scene {
             fontWeight: 'bold'
         });
         
+        // Tempo restante
+        this.timeText = this.add.text(width * 0.5, height * 0.03, 'Tempo: 60s', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(24, Math.floor(width / 30)),
+            color: '#1cabc0',
+            fontWeight: 'bold'
+        }).setOrigin(0.5, 0);
+        
         // Vidas
         this.livesGroup = this.add.group();
         this.updateLivesDisplay();
+    }
+    
+    updateTimeDisplay() {
+        const remainingTime = Math.max(0, Math.ceil((this.maxGameTime - this.gameTime) / 1000));
+        this.timeText.setText(`Tempo: ${remainingTime}s`);
+        
+        // Piscar o tempo quando estiver acabando (menos de 10 segundos)
+        if (remainingTime <= 10) {
+            if (Math.floor(this.gameTime / 500) % 2 === 0) {
+                this.timeText.setColor('#ff0000');
+            } else {
+                this.timeText.setColor('#1cabc0');
+            }
+        }
     }
 
     updateLivesDisplay() {
@@ -112,6 +148,33 @@ export default class GameScene extends Phaser.Scene {
                 'heart'
             ).setScale(Math.max(0.5, width / 1600));
             this.livesGroup.add(heart);
+        }
+    }
+    
+    addLogoSpace() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um espaço quadrado para a logo no canto inferior direito
+        const logoSize = Math.min(width, height) * 0.15; // 15% da menor dimensão
+        const logoX = width - logoSize/2 - 20;
+        const logoY = height - logoSize/2 - 20;
+        
+        // Adicionar um fundo para a logo
+        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7)
+            .setStrokeStyle(2, 0x1cabc0);
+            
+        // Se a imagem da logo estiver disponível, adicione-a aqui
+        try {
+            const logo = this.add.image(logoX, logoY, 'logo')
+                .setDisplaySize(logoSize * 0.9, logoSize * 0.9);
+        } catch (e) {
+            // Se a imagem não estiver disponível, adicione um texto placeholder
+            this.add.text(logoX, logoY, 'LOGO', {
+                fontFamily: 'Arial',
+                fontSize: logoSize * 0.3,
+                color: '#576a7e'
+            }).setOrigin(0.5);
         }
     }
 
@@ -132,10 +195,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade aumenta com o tempo
-        const speedFactor = 1 + (this.gameTime / 60000); // Aumenta 100% a cada minuto
+        // Velocidade aumenta com o tempo - fator aumentado
+        const speedFactor = 1 + (this.gameTime / 30000); // Aumenta 100% a cada 30 segundos (era 60000)
         const velocityX = Phaser.Math.Between(-100, 100) * speedFactor;
-        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor;
+        const velocityY = Phaser.Math.Between(-400, -300) * speedFactor; // Velocidade base aumentada
         
         const server = new Server(this, x, y);
         this.servers.add(server);
@@ -156,10 +219,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco menor que os servidores
-        const speedFactor = 1 + (this.gameTime / 90000); // Aumenta mais lentamente
+        // Velocidade um pouco menor que os servidores, mas também aumentada
+        const speedFactor = 1 + (this.gameTime / 45000); // Aumenta mais lentamente (era 90000)
         const velocityX = Phaser.Math.Between(-80, 80) * speedFactor;
-        const velocityY = Phaser.Math.Between(-300, -200) * speedFactor;
+        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor; // Velocidade base aumentada
         
         const cloud = new Cloud(this, x, y);
         this.clouds.add(cloud);
@@ -245,8 +308,8 @@ export default class GameScene extends Phaser.Scene {
     }
 
     increaseDifficulty() {
-        // Reduzir tempo entre spawns
-        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 100);
+        // Reduzir tempo entre spawns - mais agressivo
+        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 150); // Redução maior (era 100)
         this.spawnTimer.delay = this.spawnRate;
     }
 
