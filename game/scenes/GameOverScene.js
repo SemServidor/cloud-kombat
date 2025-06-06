@@ -97,7 +97,7 @@ export default class GameOverScene extends Phaser.Scene {
             .on('pointerover', function() { this.setStyle({ backgroundColor: '#1cabc0' }); })
             .on('pointerout', function() { this.setStyle({ backgroundColor: '#576a7e' }); });
             
-        // Adicionar espaço para logo
+        // Adicionar espaço para logo alinhado à direita
         this.addLogoSpace();
     }
     
@@ -107,12 +107,11 @@ export default class GameOverScene extends Phaser.Scene {
         
         // Criar um espaço quadrado para a logo no canto inferior direito
         const logoSize = Math.min(width, height) * 0.15; // 15% da menor dimensão
-        const logoX = width - logoSize/2 - 20;
+        const logoX = width - logoSize/2 - 20; // Alinhado à direita
         const logoY = height - logoSize/2 - 20;
         
         // Adicionar um fundo para a logo
-        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7)
-            .setStrokeStyle(2, 0x1cabc0);
+        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7);
             
         // Se a imagem da logo estiver disponível, adicione-a aqui
         try {

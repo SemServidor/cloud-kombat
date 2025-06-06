@@ -25,7 +25,7 @@ export default class MenuScene extends Phaser.Scene {
         const rightSide = width * 0.75; // Centro da metade direita
         
         // Adicionar título temporário enquanto não temos assets
-        this.add.text(width * 0.5, height * 0.1, 'Sem Servidor: Smash Mode', {
+        this.add.text(width * 0.5, height * 0.1, 'Sem Servidor - Cloud Kombat', {
             fontFamily: 'Arial',
             fontSize: Math.max(36, Math.floor(width / 20)),
             color: '#1cabc0',
@@ -45,9 +45,9 @@ export default class MenuScene extends Phaser.Scene {
             color: '#576a7e'
         }).setOrigin(0, 0.5);
 
-        // Criar opções de armas em linha vertical
+        // Criar opções de armas em linha vertical com mais espaçamento
         const weaponStartY = height * 0.35;
-        const weaponSpacing = height * 0.12;
+        const weaponSpacing = height * 0.15; // Aumentado o espaçamento
 
         // Marreta
         const hammer = this.add.image(leftMargin + width * 0.05, weaponStartY, 'hammer')
@@ -68,26 +68,27 @@ export default class MenuScene extends Phaser.Scene {
             .on('pointerdown', () => this.selectWeapon('crowbar'));
 
         // Nomes das armas
-        this.add.text(leftMargin + width * 0.1, weaponStartY, 'Martelo', {
+        this.add.text(leftMargin + width * 0.1, weaponStartY, 'Smash 1.0', {
             fontFamily: 'Arial',
             fontSize: Math.max(18, Math.floor(width / 40)),
             color: '#576a7e'
         }).setOrigin(0, 0.5);
 
-        this.add.text(leftMargin + width * 0.1, weaponStartY + weaponSpacing, 'Taco', {
+        this.add.text(leftMargin + width * 0.1, weaponStartY + weaponSpacing, 'CloudBuster', {
             fontFamily: 'Arial',
             fontSize: Math.max(18, Math.floor(width / 40)),
             color: '#576a7e'
         }).setOrigin(0, 0.5);
 
-        this.add.text(leftMargin + width * 0.1, weaponStartY + weaponSpacing * 2, 'Pé de Cabra', {
+        this.add.text(leftMargin + width * 0.1, weaponStartY + weaponSpacing * 2, 'Legacy Smasher', {
             fontFamily: 'Arial',
             fontSize: Math.max(18, Math.floor(width / 40)),
             color: '#576a7e'
         }).setOrigin(0, 0.5);
 
-        // Criar seleção visual
-        this.selectionBox = this.add.rectangle(leftMargin + width * 0.05, weaponStartY, width * 0.15, height * 0.1, 0x1cabc0, 0.3)
+        // Criar seleção visual quadrada
+        const selectorSize = width * 0.08; // Tamanho do seletor quadrado
+        this.selectionBox = this.add.rectangle(leftMargin + width * 0.05, weaponStartY, selectorSize, selectorSize, 0x1cabc0, 0.3)
             .setStrokeStyle(2, 0x1cabc0);
 
         // Botão de iniciar
@@ -112,7 +113,7 @@ export default class MenuScene extends Phaser.Scene {
         // === LADO DIREITO - LEADERBOARD ===
         this.showLeaderboard(rightSide, height);
         
-        // Adicionar espaço para logo
+        // Adicionar espaço para logo alinhado à direita
         this.addLogoSpace();
     }
     
@@ -120,14 +121,13 @@ export default class MenuScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
-        // Criar um espaço quadrado para a logo no canto inferior esquerdo
+        // Criar um espaço quadrado para a logo no canto inferior direito
         const logoSize = Math.min(width, height) * 0.15; // 15% da menor dimensão
-        const logoX = width * 0.1 + logoSize/2;
+        const logoX = width - logoSize/2 - 20; // Alinhado à direita
         const logoY = height - logoSize/2 - 20;
         
         // Adicionar um fundo para a logo
-        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7)
-            .setStrokeStyle(2, 0x1cabc0);
+        const logoBg = this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7);
             
         // Se a imagem da logo estiver disponível, adicione-a aqui
         try {
@@ -149,7 +149,7 @@ export default class MenuScene extends Phaser.Scene {
         // Obter dimensões do jogo
         const height = this.scale.height;
         const weaponStartY = height * 0.35;
-        const weaponSpacing = height * 0.12;
+        const weaponSpacing = height * 0.15; // Aumentado o espaçamento
         
         // Atualizar posição da caixa de seleção
         const positions = {
