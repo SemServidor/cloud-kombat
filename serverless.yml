@@ -81,17 +81,11 @@ resources:
             MaxTTL: 31536000
           PriceClass: PriceClass_100
           ViewerCertificate:
-            ${self:custom.certificateArn empty false:
-              AcmCertificateArn: ${self:custom.certificateArn}
-              SslSupportMethod: sni-only
-              MinimumProtocolVersion: TLSv1.2_2021
-            ${self:custom.certificateArn empty true:
-              CloudFrontDefaultCertificate: true
-            }}
-          ${self:custom.domainName empty false:
+            AcmCertificateArn: ${self:custom.certificateArn}
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
           Aliases:
             - ${self:custom.domainName}
-          }
 
   Outputs:
     WebsiteURL:
