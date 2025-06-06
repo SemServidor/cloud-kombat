@@ -1,0 +1,117 @@
+service: sem-servidor-smash-mode
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+
+custom:
+  stackName: ${param:stackName, 'sem-servidor-game'}
+  domainName: ${param:domainName, ''}
+  certificateArn: ${param:certificateArn, ''}
+
+# Sem funções Lambda - apenas infraestrutura para hospedagem estática
+functions: {}
+
+resources:
+  Resources:
+    # S3 Bucket para armazenar o jogo estático
+    WebsiteBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.stackName}-website-${self:provider.stage}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        Tags:
+          - Key: Name
+            Value: ${self:custom.stackName}-website-bucket-${self:provider.stage}
+
+    # Política de bucket para permitir acesso público de leitura
+    WebsiteBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref WebsiteBucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: !Sub "arn:aws:s3:::${WebsiteBucket}/*"
+
+    # CloudFront Distribution
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+              Id: S3Origin
+              S3OriginConfig:
+                OriginAccessIdentity: ''
+          Enabled: true
+          DefaultRootObject: index.html
+          HttpVersion: http2
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            TargetOriginId: S3Origin
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+            DefaultTTL: 86400
+            MinTTL: 0
+            MaxTTL: 31536000
+          PriceClass: PriceClass_100
+          ViewerCertificate:
+            ${self:custom.certificateArn empty false:
+              AcmCertificateArn: ${self:custom.certificateArn}
+              SslSupportMethod: sni-only
+              MinimumProtocolVersion: TLSv1.2_2021
+            ${self:custom.certificateArn empty true:
+              CloudFrontDefaultCertificate: true
+            }}
+          ${self:custom.domainName empty false:
+          Aliases:
+            - ${self:custom.domainName}
+          }
+
+  Outputs:
+    WebsiteURL:
+      Description: URL do site S3
+      Value: !GetAtt WebsiteBucket.WebsiteURL
+
+    CloudFrontURL:
+      Description: URL de distribuição do CloudFront
+      Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+
+    ${self:custom.domainName empty false:
+    CustomDomainURL:
+      Description: URL personalizado
+      Value: !Sub "https://${self:custom.domainName}"
+    }
+      
+    BucketName:
+      Description: Nome do bucket S3 para deploy
+      Value: !Ref WebsiteBucket
+      
+    CloudFrontDistributionId:
+      Description: ID da distribuição CloudFront para invalidação de cache
+      Value: !Ref CloudFrontDistribution

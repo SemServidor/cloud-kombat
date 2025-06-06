@@ -1,0 +1,21 @@
+{
+  "name": "sem-servidor-smash-mode",
+  "version": "1.0.0",
+  "description": "Um jogo arcade que roda exclusivamente em navegadores desktop, sem backend",
+  "main": "main.js",
+  "scripts": {
+    "start": "http-server -p 8080",
+    "build": "mkdir -p dist && cp -r index.html main.js game assets styles dist/"
+  },
+  "keywords": [
+    "game",
+    "phaser",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "serverless": "^3.38.0"
+  }
+}
