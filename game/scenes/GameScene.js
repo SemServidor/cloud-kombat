@@ -36,6 +36,10 @@ export default class GameScene extends Phaser.Scene {
         // Inicializar gerenciador de pontuação
         this.scoreManager = new ScoreManager();
         
+        // Obter dimensões do jogo
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
         // Criar grupos para servidores e nuvens
         this.servers = this.physics.add.group();
         this.clouds = this.physics.add.group();
@@ -77,10 +81,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     setupUI() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
         // Pontuação
-        this.scoreText = this.add.text(20, 20, 'Pontos: 0', {
+        this.scoreText = this.add.text(width * 0.03, height * 0.03, 'Pontos: 0', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#1cabc0',
             fontWeight: 'bold'
         });
@@ -91,12 +98,19 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateLivesDisplay() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
         // Limpar exibição de vidas anterior
         this.livesGroup.clear(true, true);
         
         // Adicionar corações para cada vida
         for (let i = 0; i < this.lives; i++) {
-            const heart = this.add.image(this.game.config.width - 40 - (i * 40), 40, 'heart').setScale(0.5);
+            const heart = this.add.image(
+                width - (width * 0.05) - (i * width * 0.05), 
+                height * 0.06, 
+                'heart'
+            ).setScale(Math.max(0.5, width / 1600));
             this.livesGroup.add(heart);
         }
     }
@@ -111,9 +125,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     spawnServer() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
         // Criar um novo servidor em posição aleatória
-        const x = Phaser.Math.Between(100, this.game.config.width - 100);
-        const y = this.game.config.height + 50;
+        const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+        const y = height + 50;
         
         // Velocidade aumenta com o tempo
         const speedFactor = 1 + (this.gameTime / 60000); // Aumenta 100% a cada minuto
@@ -123,15 +140,21 @@ export default class GameScene extends Phaser.Scene {
         const server = new Server(this, x, y);
         this.servers.add(server);
         
+        // Escala baseada no tamanho da tela
+        server.setScale(Math.max(0.8, width / 1000));
+        
         // Aplicar física
         server.setVelocity(velocityX, velocityY);
         server.setAngularVelocity(Phaser.Math.Between(-100, 100));
     }
 
     spawnCloud() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
         // Criar uma nova nuvem em posição aleatória
-        const x = Phaser.Math.Between(100, this.game.config.width - 100);
-        const y = this.game.config.height + 50;
+        const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+        const y = height + 50;
         
         // Velocidade um pouco menor que os servidores
         const speedFactor = 1 + (this.gameTime / 90000); // Aumenta mais lentamente
@@ -140,6 +163,9 @@ export default class GameScene extends Phaser.Scene {
         
         const cloud = new Cloud(this, x, y);
         this.clouds.add(cloud);
+        
+        // Escala baseada no tamanho da tela
+        cloud.setScale(Math.max(0.7, width / 1100));
         
         // Aplicar física
         cloud.setVelocity(velocityX, velocityY);

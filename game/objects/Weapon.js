@@ -9,8 +9,11 @@ export default class Weapon extends Phaser.GameObjects.Sprite {
         this.type = type;
         this.setTexture(type);
         
+        // Obter dimensões do jogo
+        const width = scene.scale.width;
+        
         // Configurar escala e origem
-        this.setScale(0.8);
+        this.setScale(Math.max(0.8, width / 1000));
         this.setOrigin(0.2, 0.8); // Ponto de origem próximo ao "cabo" da arma
         
         // Configurar profundidade para ficar acima de outros objetos

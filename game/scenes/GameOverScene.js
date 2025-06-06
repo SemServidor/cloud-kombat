@@ -11,38 +11,43 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     create() {
+        // Obter dimensões do jogo
+        const width = this.scale.width;
+        const height = this.scale.height;
+        const centerX = width / 2;
+        
         // Título Game Over
-        this.add.text(400, 150, 'GAME OVER', {
+        this.add.text(centerX, height * 0.2, 'GAME OVER', {
             fontFamily: 'Arial',
-            fontSize: 48,
+            fontSize: Math.max(48, Math.floor(width / 15)),
             color: '#576a7e',
             fontWeight: 'bold',
             align: 'center'
         }).setOrigin(0.5);
 
         // Mostrar pontuação
-        this.add.text(400, 220, `Sua pontuação: ${this.score}`, {
+        this.add.text(centerX, height * 0.3, `Sua pontuação: ${this.score}`, {
             fontFamily: 'Arial',
-            fontSize: 32,
+            fontSize: Math.max(32, Math.floor(width / 20)),
             color: '#1cabc0',
             align: 'center'
         }).setOrigin(0.5);
 
         // Campo para inserir nome
-        this.add.text(400, 280, 'Digite seu nome:', {
+        this.add.text(centerX, height * 0.4, 'Digite seu nome:', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#576a7e'
         }).setOrigin(0.5);
 
         // Retângulo para entrada de texto
-        const inputBox = this.add.rectangle(400, 330, 300, 50, 0xf0f0f0, 0.7)
+        const inputBox = this.add.rectangle(centerX, height * 0.47, width * 0.4, height * 0.08, 0xf0f0f0, 0.7)
             .setStrokeStyle(2, 0x1cabc0);
 
         // Texto para entrada de nome
-        this.nameText = this.add.text(400, 330, '', {
+        this.nameText = this.add.text(centerX, height * 0.47, '', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#576a7e',
             align: 'center'
         }).setOrigin(0.5);
@@ -51,16 +56,16 @@ export default class GameOverScene extends Phaser.Scene {
         this.input.keyboard.on('keydown', this.handleKeyInput, this);
 
         // Botão para salvar pontuação
-        this.saveButton = this.add.text(400, 400, 'SALVAR', {
+        this.saveButton = this.add.text(centerX, height * 0.6, 'SALVAR', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#ffffff',
             backgroundColor: '#1cabc0',
             padding: {
-                left: 20,
-                right: 20,
-                top: 10,
-                bottom: 10
+                left: Math.floor(width / 40),
+                right: Math.floor(width / 40),
+                top: Math.floor(height / 60),
+                bottom: Math.floor(height / 60)
             }
         })
             .setOrigin(0.5)
@@ -70,16 +75,16 @@ export default class GameOverScene extends Phaser.Scene {
             .on('pointerout', () => this.saveButton.setStyle({ backgroundColor: '#1cabc0' }));
 
         // Botão para voltar ao menu
-        this.add.text(400, 480, 'VOLTAR AO MENU', {
+        this.add.text(centerX, height * 0.75, 'VOLTAR AO MENU', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: Math.max(24, Math.floor(width / 30)),
             color: '#ffffff',
             backgroundColor: '#576a7e',
             padding: {
-                left: 20,
-                right: 20,
-                top: 10,
-                bottom: 10
+                left: Math.floor(width / 40),
+                right: Math.floor(width / 40),
+                top: Math.floor(height / 60),
+                bottom: Math.floor(height / 60)
             }
         })
             .setOrigin(0.5)

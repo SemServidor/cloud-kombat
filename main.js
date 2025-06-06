@@ -2,11 +2,23 @@ import MenuScene from './game/scenes/MenuScene.js';
 import GameScene from './game/scenes/GameScene.js';
 import GameOverScene from './game/scenes/GameOverScene.js';
 
-// Configuração do jogo
+// Configuração do jogo com suporte responsivo
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 1000,  // Aumentado para melhor distribuição dos elementos
+        height: 600,
+        min: {
+            width: 800,
+            height: 600
+        },
+        max: {
+            width: 1920,
+            height: 1080
+        }
+    },
     parent: 'game-container',
     physics: {
         default: 'arcade',
