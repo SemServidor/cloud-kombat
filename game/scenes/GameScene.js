@@ -14,7 +14,7 @@ export default class GameScene extends Phaser.Scene {
         this.gameTime = 0;
         this.maxGameTime = 60000; // 1 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
-        this.minSpawnRate = 400; // Tempo mínimo entre spawns
+        this.minSpawnRate = 500; // Tempo mínimo entre spawns (aumentado de 400)
         this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade
         
         // Contadores para equilibrar os objetos
@@ -321,10 +321,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade aumenta com o tempo
-        const speedFactor = 1 + (this.gameTime / 30000); // Aumenta 100% a cada 30 segundos
+        // Velocidade aumenta com o tempo (reduzido)
+        const speedFactor = 1 + (this.gameTime / 45000); // Aumenta 100% a cada 45 segundos (era 30s)
         const velocityX = Phaser.Math.Between(-100, 100) * speedFactor;
-        const velocityY = Phaser.Math.Between(-400, -300) * speedFactor;
+        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor; // Velocidade base reduzida
         
         const server = new Server(this, x, y);
         this.clickableObjects.add(server);
@@ -349,10 +349,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor
-        const speedFactor = 1 + (this.gameTime / 35000);
+        // Velocidade similar ao servidor (reduzida)
+        const speedFactor = 1 + (this.gameTime / 50000); // Reduzido de 35000
         const velocityX = Phaser.Math.Between(-90, 90) * speedFactor;
-        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor;
+        const velocityY = Phaser.Math.Between(-360, -260) * speedFactor; // Velocidade base reduzida
         
         const networkSwitch = new NetworkSwitch(this, x, y);
         this.clickableObjects.add(networkSwitch);
@@ -377,10 +377,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor
-        const speedFactor = 1 + (this.gameTime / 32000);
+        // Velocidade similar ao servidor (reduzida)
+        const speedFactor = 1 + (this.gameTime / 48000); // Reduzido de 32000
         const velocityX = Phaser.Math.Between(-95, 95) * speedFactor;
-        const velocityY = Phaser.Math.Between(-390, -290) * speedFactor;
+        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor; // Velocidade base reduzida
         
         const monitor = new Monitor(this, x, y);
         this.clickableObjects.add(monitor);
@@ -405,10 +405,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco menor que os servidores
-        const speedFactor = 1 + (this.gameTime / 45000);
+        // Velocidade um pouco menor que os servidores (reduzida)
+        const speedFactor = 1 + (this.gameTime / 60000); // Reduzido de 45000
         const velocityX = Phaser.Math.Between(-80, 80) * speedFactor;
-        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor;
+        const velocityY = Phaser.Math.Between(-330, -230) * speedFactor; // Velocidade base reduzida
         
         const cloud = new Cloud(this, x, y);
         this.nonClickableObjects.add(cloud);
@@ -432,10 +432,10 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco mais rápida que as nuvens
-        const speedFactor = 1 + (this.gameTime / 40000);
+        // Velocidade um pouco mais rápida que as nuvens (reduzida)
+        const speedFactor = 1 + (this.gameTime / 55000); // Reduzido de 40000
         const velocityX = Phaser.Math.Between(-85, 85) * speedFactor;
-        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor;
+        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor; // Velocidade base reduzida
         
         const logo = new ServerlessLogo(this, x, y);
         this.nonClickableObjects.add(logo);
@@ -551,16 +551,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     increaseDifficulty() {
-        // Reduzir tempo entre spawns
-        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 150);
+        // Reduzir tempo entre spawns (menos agressivo)
+        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 120); // Reduzido de 150
         this.spawnTimer.delay = this.spawnRate;
     }
 
     endGame() {
-        // Salvar pontuação
-        this.scoreManager.addScore(this.score);
-        
-        // Ir para tela de game over
+        // Ir para tela de game over sem salvar pontuação aqui
         this.scene.start('GameOverScene', { score: this.score });
     }
 }
