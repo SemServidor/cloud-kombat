@@ -2,6 +2,9 @@ import Server from '../objects/Server.js';
 import Cloud from '../objects/Cloud.js';
 import Weapon from '../objects/Weapon.js';
 import ScoreManager from '../utils/ScoreManager.js';
+import NetworkSwitch from '../objects/NetworkSwitch.js';
+import Monitor from '../objects/Monitor.js';
+import ServerlessLogo from '../objects/ServerlessLogo.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -11,8 +14,30 @@ export default class GameScene extends Phaser.Scene {
         this.gameTime = 0;
         this.maxGameTime = 60000; // 1 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
-        this.minSpawnRate = 400; // Tempo mínimo entre spawns (reduzido)
-        this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade (reduzido)
+        this.minSpawnRate = 400; // Tempo mínimo entre spawns
+        this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade
+        
+        // Contadores para equilibrar os objetos
+        this.clickableSpawned = 0;
+        this.nonClickableSpawned = 0;
+        
+        // Rastreamento de objetos para equilíbrio
+        this.objectCounts = {
+            server: 0,
+            networkSwitch: 0,
+            monitor: 0,
+            cloud: 0,
+            serverlessLogo: 0
+        };
+        
+        // Probabilidades base para cada tipo de objeto
+        this.baseSpawnChances = {
+            server: 0.4,
+            networkSwitch: 0.2,
+            monitor: 0.2,
+            cloud: 0.15,
+            serverlessLogo: 0.05
+        };
     }
 
     init(data) {
@@ -21,6 +46,19 @@ export default class GameScene extends Phaser.Scene {
         this.lives = 3;
         this.gameTime = 0;
         this.spawnRate = 2000;
+        
+        // Resetar contadores
+        this.clickableSpawned = 0;
+        this.nonClickableSpawned = 0;
+        
+        // Resetar contagem de objetos
+        this.objectCounts = {
+            server: 0,
+            networkSwitch: 0,
+            monitor: 0,
+            cloud: 0,
+            serverlessLogo: 0
+        };
     }
 
     preload() {
@@ -31,7 +69,12 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bat', 'assets/sprites/bat128.png');
         this.load.image('crowbar', 'assets/sprites/crowbar128.png');
         this.load.image('heart', 'assets/ui/heart.png');
-        this.load.image('logo', 'assets/ui/logo.png');
+        this.load.image('logo', 'assets/ui/logo.jpeg');
+        
+        // Novas imagens
+        this.load.image('network_switch', 'assets/sprites/network_switch128.png');
+        this.load.image('monitor', 'assets/sprites/monitor128.png');
+        this.load.image('serverless_logo', 'assets/sprites/serverless_logo128.png');
     }
 
     create() {
@@ -42,9 +85,9 @@ export default class GameScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
-        // Criar grupos para servidores e nuvens
-        this.servers = this.physics.add.group();
-        this.clouds = this.physics.add.group();
+        // Criar grupos para os diferentes tipos de objetos
+        this.clickableObjects = this.physics.add.group();
+        this.nonClickableObjects = this.physics.add.group();
         
         // Criar arma selecionada
         this.weapon = new Weapon(this, this.selectedWeapon);
@@ -92,6 +135,11 @@ export default class GameScene extends Phaser.Scene {
         
         // Remover objetos que saíram da tela
         this.cleanupObjects();
+        
+        // Atualizar rotação dos objetos
+        this.clickableObjects.getChildren().forEach(obj => {
+            if (obj.update) obj.update();
+        });
     }
 
     setupUI() {
@@ -178,12 +226,91 @@ export default class GameScene extends Phaser.Scene {
     }
 
     spawnObjects() {
-        // Decidir se vai spawnar servidor ou nuvem (70% chance de servidor)
-        if (Math.random() < 0.7) {
-            this.spawnServer();
-        } else {
-            this.spawnCloud();
+        // Calcular as probabilidades ajustadas com base no equilíbrio
+        const adjustedChances = this.calculateAdjustedSpawnChances();
+        
+        // Escolher um tipo de objeto com base nas probabilidades ajustadas
+        const objectType = this.selectObjectType(adjustedChances);
+        
+        // Spawnar o objeto selecionado
+        switch (objectType) {
+            case 'server':
+                this.spawnServer();
+                break;
+            case 'networkSwitch':
+                this.spawnNetworkSwitch();
+                break;
+            case 'monitor':
+                this.spawnMonitor();
+                break;
+            case 'cloud':
+                this.spawnCloud();
+                break;
+            case 'serverlessLogo':
+                this.spawnServerlessLogo();
+                break;
         }
+    }
+    
+    calculateAdjustedSpawnChances() {
+        // Calcular o total de objetos spawned
+        const totalSpawned = this.clickableSpawned + this.nonClickableSpawned;
+        
+        // Se não houver objetos spawned, usar as probabilidades base
+        if (totalSpawned === 0) {
+            return { ...this.baseSpawnChances };
+        }
+        
+        // Calcular a proporção atual de clicáveis vs não-clicáveis
+        const currentClickableRatio = this.clickableSpawned / totalSpawned;
+        
+        // Queremos manter uma proporção de aproximadamente 70% clicáveis e 30% não-clicáveis
+        const targetClickableRatio = 0.7;
+        
+        // Ajustar as probabilidades com base no desvio da proporção alvo
+        const adjustment = (targetClickableRatio - currentClickableRatio) * 0.3; // Fator de ajuste
+        
+        // Criar cópia das probabilidades base
+        const adjusted = { ...this.baseSpawnChances };
+        
+        // Ajustar probabilidades para objetos clicáveis
+        adjusted.server += adjustment * 0.5;
+        adjusted.networkSwitch += adjustment * 0.25;
+        adjusted.monitor += adjustment * 0.25;
+        
+        // Ajustar probabilidades para objetos não-clicáveis
+        adjusted.cloud -= adjustment * 0.8;
+        adjusted.serverlessLogo -= adjustment * 0.2;
+        
+        // Garantir que todas as probabilidades estejam entre 0.05 e 0.6
+        Object.keys(adjusted).forEach(key => {
+            adjusted[key] = Math.max(0.05, Math.min(0.6, adjusted[key]));
+        });
+        
+        // Normalizar para que a soma seja 1
+        const sum = Object.values(adjusted).reduce((a, b) => a + b, 0);
+        Object.keys(adjusted).forEach(key => {
+            adjusted[key] = adjusted[key] / sum;
+        });
+        
+        return adjusted;
+    }
+    
+    selectObjectType(chances) {
+        // Gerar um número aleatório entre 0 e 1
+        const rand = Math.random();
+        
+        // Calcular probabilidades cumulativas
+        let cumulative = 0;
+        for (const [type, chance] of Object.entries(chances)) {
+            cumulative += chance;
+            if (rand < cumulative) {
+                return type;
+            }
+        }
+        
+        // Fallback para servidor (não deveria chegar aqui)
+        return 'server';
     }
 
     spawnServer() {
@@ -194,13 +321,13 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade aumenta com o tempo - fator aumentado
-        const speedFactor = 1 + (this.gameTime / 30000); // Aumenta 100% a cada 30 segundos (era 60000)
+        // Velocidade aumenta com o tempo
+        const speedFactor = 1 + (this.gameTime / 30000); // Aumenta 100% a cada 30 segundos
         const velocityX = Phaser.Math.Between(-100, 100) * speedFactor;
-        const velocityY = Phaser.Math.Between(-400, -300) * speedFactor; // Velocidade base aumentada
+        const velocityY = Phaser.Math.Between(-400, -300) * speedFactor;
         
         const server = new Server(this, x, y);
-        this.servers.add(server);
+        this.clickableObjects.add(server);
         
         // Escala baseada no tamanho da tela
         server.setScale(Math.max(0.8, width / 1000));
@@ -208,6 +335,66 @@ export default class GameScene extends Phaser.Scene {
         // Aplicar física
         server.setVelocity(velocityX, velocityY);
         server.setAngularVelocity(Phaser.Math.Between(-100, 100));
+        
+        // Atualizar contadores
+        this.clickableSpawned++;
+        this.objectCounts.server++;
+    }
+    
+    spawnNetworkSwitch() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um novo switch em posição aleatória
+        const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+        const y = height + 50;
+        
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 35000);
+        const velocityX = Phaser.Math.Between(-90, 90) * speedFactor;
+        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor;
+        
+        const networkSwitch = new NetworkSwitch(this, x, y);
+        this.clickableObjects.add(networkSwitch);
+        
+        // Escala baseada no tamanho da tela
+        networkSwitch.setScale(Math.max(0.75, width / 1100));
+        
+        // Aplicar física
+        networkSwitch.setVelocity(velocityX, velocityY);
+        networkSwitch.setAngularVelocity(Phaser.Math.Between(-80, 80));
+        
+        // Atualizar contadores
+        this.clickableSpawned++;
+        this.objectCounts.networkSwitch++;
+    }
+    
+    spawnMonitor() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um novo monitor em posição aleatória
+        const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+        const y = height + 50;
+        
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 32000);
+        const velocityX = Phaser.Math.Between(-95, 95) * speedFactor;
+        const velocityY = Phaser.Math.Between(-390, -290) * speedFactor;
+        
+        const monitor = new Monitor(this, x, y);
+        this.clickableObjects.add(monitor);
+        
+        // Escala baseada no tamanho da tela
+        monitor.setScale(Math.max(0.78, width / 1050));
+        
+        // Aplicar física
+        monitor.setVelocity(velocityX, velocityY);
+        monitor.setAngularVelocity(Phaser.Math.Between(-90, 90));
+        
+        // Atualizar contadores
+        this.clickableSpawned++;
+        this.objectCounts.monitor++;
     }
 
     spawnCloud() {
@@ -218,97 +405,154 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco menor que os servidores, mas também aumentada
-        const speedFactor = 1 + (this.gameTime / 45000); // Aumenta mais lentamente (era 90000)
+        // Velocidade um pouco menor que os servidores
+        const speedFactor = 1 + (this.gameTime / 45000);
         const velocityX = Phaser.Math.Between(-80, 80) * speedFactor;
-        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor; // Velocidade base aumentada
+        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor;
         
         const cloud = new Cloud(this, x, y);
-        this.clouds.add(cloud);
+        this.nonClickableObjects.add(cloud);
         
         // Escala baseada no tamanho da tela
         cloud.setScale(Math.max(0.7, width / 1100));
         
         // Aplicar física
         cloud.setVelocity(velocityX, velocityY);
+        
+        // Atualizar contadores
+        this.nonClickableSpawned++;
+        this.objectCounts.cloud++;
+    }
+    
+    spawnServerlessLogo() {
+        const width = this.scale.width;
+        const height = this.scale.height;
+        
+        // Criar um novo logo em posição aleatória
+        const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+        const y = height + 50;
+        
+        // Velocidade um pouco mais rápida que as nuvens
+        const speedFactor = 1 + (this.gameTime / 40000);
+        const velocityX = Phaser.Math.Between(-85, 85) * speedFactor;
+        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor;
+        
+        const logo = new ServerlessLogo(this, x, y);
+        this.nonClickableObjects.add(logo);
+        
+        // Escala baseada no tamanho da tela
+        logo.setScale(Math.max(0.65, width / 1200));
+        
+        // Aplicar física
+        logo.setVelocity(velocityX, velocityY);
+        
+        // Atualizar contadores
+        this.nonClickableSpawned++;
+        this.objectCounts.serverlessLogo++;
     }
 
     handleClick(pointer) {
         // Animar a arma
         this.weapon.swing();
         
-        // Verificar colisão com servidores
-        let hitServer = false;
-        this.servers.getChildren().forEach(server => {
-            if (Phaser.Geom.Rectangle.Contains(server.getBounds(), pointer.x, pointer.y)) {
-                this.smashServer(server);
-                hitServer = true;
+        // Verificar colisão com objetos clicáveis
+        let hitClickable = false;
+        this.clickableObjects.getChildren().forEach(obj => {
+            if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+                this.smashClickable(obj);
+                hitClickable = true;
             }
         });
         
-        // Verificar colisão com nuvens (apenas se não acertou servidor)
-        if (!hitServer) {
-            this.clouds.getChildren().forEach(cloud => {
-                if (Phaser.Geom.Rectangle.Contains(cloud.getBounds(), pointer.x, pointer.y)) {
-                    this.hitCloud(cloud);
+        // Verificar colisão com objetos não-clicáveis (apenas se não acertou clicável)
+        if (!hitClickable) {
+            this.nonClickableObjects.getChildren().forEach(obj => {
+                if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+                    this.hitNonClickable(obj);
                 }
             });
         }
     }
 
-    smashServer(server) {
+    smashClickable(obj) {
         // Efeito de explosão
         this.tweens.add({
-            targets: server,
+            targets: obj,
             scale: 0.1,
             alpha: 0,
             duration: 200,
-            onComplete: () => server.destroy()
+            onComplete: () => obj.destroy()
         });
         
         // Aumentar pontuação
         this.score++;
         this.scoreText.setText(`Pontos: ${this.score}`);
+        
+        // Efeito de texto flutuante
+        this.showFloatingText(obj.x, obj.y, '+1', 0x00ff00);
     }
 
-    hitCloud(cloud) {
+    hitNonClickable(obj) {
         // Efeito visual
         this.tweens.add({
-            targets: cloud,
+            targets: obj,
             alpha: 0.3,
             yoyo: true,
-            duration: 100
+            duration: 100,
+            onComplete: () => obj.destroy()
         });
         
         // Perder uma vida
         this.lives--;
         this.updateLivesDisplay();
         
+        // Efeito de texto flutuante
+        this.showFloatingText(obj.x, obj.y, '-1 vida', 0xff0000);
+        
         // Verificar fim de jogo
         if (this.lives <= 0) {
             this.endGame();
         }
     }
+    
+    showFloatingText(x, y, message, color) {
+        const text = this.add.text(x, y, message, {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: color === 0x00ff00 ? '#00ff00' : '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: text,
+            y: y - 100,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => text.destroy()
+        });
+    }
 
     cleanupObjects() {
-        // Remover servidores que saíram da tela
-        this.servers.getChildren().forEach(server => {
-            if (server.y < -100) {
-                server.destroy();
+        // Remover objetos clicáveis que saíram da tela
+        this.clickableObjects.getChildren().forEach(obj => {
+            if (obj.y < -100) {
+                obj.destroy();
             }
         });
         
-        // Remover nuvens que saíram da tela
-        this.clouds.getChildren().forEach(cloud => {
-            if (cloud.y < -100) {
-                cloud.destroy();
+        // Remover objetos não-clicáveis que saíram da tela
+        this.nonClickableObjects.getChildren().forEach(obj => {
+            if (obj.y < -100) {
+                obj.destroy();
             }
         });
     }
 
     increaseDifficulty() {
-        // Reduzir tempo entre spawns - mais agressivo
-        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 150); // Redução maior (era 100)
+        // Reduzir tempo entre spawns
+        this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 150);
         this.spawnTimer.delay = this.spawnRate;
     }
 
