@@ -12,7 +12,7 @@ export default class GameScene extends Phaser.Scene {
         this.score = 0;
         this.lives = 3;
         this.gameTime = 0;
-        this.maxGameTime = 60000; // 1 minuto em milissegundos
+        this.maxGameTime = 90000; // 1.5 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
         this.minSpawnRate = 500; // Tempo mínimo entre spawns
         this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade
@@ -78,7 +78,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bat', 'assets/sprites/bat128.png');
         this.load.image('crowbar', 'assets/sprites/crowbar128.png');
         this.load.image('heart', 'assets/ui/heart.png');
-        this.load.image('logo', 'assets/ui/logo.jpeg');
+        this.load.image('logo', 'assets/ui/logo-padrao.png');
         
         // Novas imagens
         this.load.image('network_switch', 'assets/sprites/network_switch128.png');
@@ -94,17 +94,26 @@ export default class GameScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
+        // Detectar mobile
+        this.isMobile = this.sys.game.device.input.touch;
+        
+        // Criar texturas de partículas via canvas (sem assets externos)
+        this.createParticleTextures();
+        
         // Criar grupos para os diferentes tipos de objetos
         this.clickableObjects = this.physics.add.group();
         this.nonClickableObjects = this.physics.add.group();
         
-        // Criar arma selecionada
+        // Criar arma selecionada (oculta no mobile - o dedo é a arma)
         this.weapon = new Weapon(this, this.selectedWeapon);
+        if (this.isMobile) {
+            this.weapon.setVisible(false);
+        }
         
         // Configurar interface do usuário
         this.setupUI();
         
-        // Configurar eventos de mouse
+        // Configurar eventos de mouse/touch
         this.input.on('pointerdown', this.handleClick, this);
         
         // Configurar temporizadores
@@ -345,15 +354,16 @@ export default class GameScene extends Phaser.Scene {
         const y = height + 50;
         
         // Velocidade aumenta com o tempo (reduzido)
-        const speedFactor = 1 + (this.gameTime / 45000); // Aumenta 100% a cada 45 segundos (era 30s)
+        const speedFactor = 1 + (this.gameTime / 45000);
         const velocityX = Phaser.Math.Between(-100, 100) * speedFactor;
-        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor;
         
         const server = new Server(this, x, y);
         this.clickableObjects.add(server);
         
-        // Escala baseada no tamanho da tela
-        server.setScale(Math.max(0.8, width / 1000));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 1.0 : 0.8;
+        server.setScale(Math.max(baseScale, width / 1000));
         
         // Aplicar física
         server.setVelocity(velocityX, velocityY);
@@ -372,16 +382,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor (reduzida)
-        const speedFactor = 1 + (this.gameTime / 50000); // Reduzido de 35000
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 50000);
         const velocityX = Phaser.Math.Between(-90, 90) * speedFactor;
-        const velocityY = Phaser.Math.Between(-360, -260) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-360, -260) * speedFactor;
         
         const networkSwitch = new NetworkSwitch(this, x, y);
         this.clickableObjects.add(networkSwitch);
         
-        // Escala baseada no tamanho da tela
-        networkSwitch.setScale(Math.max(0.75, width / 1100));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.95 : 0.75;
+        networkSwitch.setScale(Math.max(baseScale, width / 1100));
         
         // Aplicar física
         networkSwitch.setVelocity(velocityX, velocityY);
@@ -400,16 +411,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor (reduzida)
-        const speedFactor = 1 + (this.gameTime / 48000); // Reduzido de 32000
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 48000);
         const velocityX = Phaser.Math.Between(-95, 95) * speedFactor;
-        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor;
         
         const monitor = new Monitor(this, x, y);
         this.clickableObjects.add(monitor);
         
-        // Escala baseada no tamanho da tela
-        monitor.setScale(Math.max(0.78, width / 1050));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.98 : 0.78;
+        monitor.setScale(Math.max(baseScale, width / 1050));
         
         // Aplicar física
         monitor.setVelocity(velocityX, velocityY);
@@ -428,16 +440,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco menor que os servidores (reduzida)
-        const speedFactor = 1 + (this.gameTime / 60000); // Reduzido de 45000
+        // Velocidade um pouco menor que os servidores
+        const speedFactor = 1 + (this.gameTime / 60000);
         const velocityX = Phaser.Math.Between(-80, 80) * speedFactor;
-        const velocityY = Phaser.Math.Between(-330, -230) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-330, -230) * speedFactor;
         
         const cloud = new Cloud(this, x, y);
         this.nonClickableObjects.add(cloud);
         
-        // Escala baseada no tamanho da tela
-        cloud.setScale(Math.max(0.7, width / 1100));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.9 : 0.7;
+        cloud.setScale(Math.max(baseScale, width / 1100));
         
         // Aplicar física
         cloud.setVelocity(velocityX, velocityY);
@@ -455,16 +468,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco mais rápida que as nuvens (reduzida)
-        const speedFactor = 1 + (this.gameTime / 55000); // Reduzido de 40000
+        // Velocidade um pouco mais rápida que as nuvens
+        const speedFactor = 1 + (this.gameTime / 55000);
         const velocityX = Phaser.Math.Between(-85, 85) * speedFactor;
-        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor;
         
         const logo = new ServerlessLogo(this, x, y);
         this.nonClickableObjects.add(logo);
         
-        // Escala baseada no tamanho da tela
-        logo.setScale(Math.max(0.65, width / 1200));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.85 : 0.65;
+        logo.setScale(Math.max(baseScale, width / 1200));
         
         // Aplicar física
         logo.setVelocity(velocityX, velocityY);
@@ -478,10 +492,21 @@ export default class GameScene extends Phaser.Scene {
         // Animar a arma
         this.weapon.swing();
         
+        // Área de toque expandida para mobile (20% maior)
+        const isMobile = this.sys.game.device.input.touch;
+        const hitPadding = isMobile ? 15 : 0;
+        
         // Verificar colisão com objetos clicáveis
         let hitClickable = false;
         this.clickableObjects.getChildren().forEach(obj => {
-            if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+            const bounds = obj.getBounds();
+            // Expandir a hit area para facilitar o toque no mobile
+            bounds.x -= hitPadding;
+            bounds.y -= hitPadding;
+            bounds.width += hitPadding * 2;
+            bounds.height += hitPadding * 2;
+            
+            if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
                 this.smashClickable(obj);
                 hitClickable = true;
             }
@@ -490,7 +515,13 @@ export default class GameScene extends Phaser.Scene {
         // Verificar colisão com objetos não-clicáveis (apenas se não acertou clicável)
         if (!hitClickable) {
             this.nonClickableObjects.getChildren().forEach(obj => {
-                if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+                const bounds = obj.getBounds();
+                bounds.x -= hitPadding;
+                bounds.y -= hitPadding;
+                bounds.width += hitPadding * 2;
+                bounds.height += hitPadding * 2;
+                
+                if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
                     this.hitNonClickable(obj);
                 }
             });
@@ -498,12 +529,15 @@ export default class GameScene extends Phaser.Scene {
     }
 
     smashClickable(obj) {
-        // Efeito de explosão
+        // Efeito de explosão com partículas
+        this.createSmashExplosion(obj.x, obj.y);
+        
+        // Efeito de escala + fade no objeto
         this.tweens.add({
             targets: obj,
             scale: 0.1,
             alpha: 0,
-            duration: 200,
+            duration: 150,
             onComplete: () => obj.destroy()
         });
         
@@ -516,6 +550,9 @@ export default class GameScene extends Phaser.Scene {
     }
 
     hitNonClickable(obj) {
+        // Efeito de partículas vermelhas ao errar
+        this.createHitExplosion(obj.x, obj.y);
+        
         // Efeito visual
         this.tweens.add({
             targets: obj,
@@ -577,6 +614,97 @@ export default class GameScene extends Phaser.Scene {
         // Reduzir tempo entre spawns (menos agressivo)
         this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 120); // Reduzido de 150
         this.spawnTimer.delay = this.spawnRate;
+    }
+
+    createParticleTextures() {
+        // Criar textura de partícula quadrada (spark)
+        const sparkGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+        sparkGraphics.fillStyle(0xffffff);
+        sparkGraphics.fillRect(0, 0, 8, 8);
+        sparkGraphics.generateTexture('particle_spark', 8, 8);
+        sparkGraphics.destroy();
+        
+        // Criar textura de partícula circular (glow)
+        const glowGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+        glowGraphics.fillStyle(0xffffff);
+        glowGraphics.fillCircle(6, 6, 6);
+        glowGraphics.generateTexture('particle_glow', 12, 12);
+        glowGraphics.destroy();
+    }
+    
+    createSmashExplosion(x, y) {
+        // Explosão de partículas ao destruir objeto (amarelo/laranja)
+        const particles = this.add.particles('particle_spark');
+        
+        const emitter = particles.createEmitter({
+            x: x,
+            y: y,
+            speed: { min: 150, max: 350 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 1.5, end: 0 },
+            lifespan: { min: 300, max: 600 },
+            quantity: 12,
+            tint: [0xffff00, 0xff8800, 0xffaa00, 0xffffff],
+            gravityY: 300,
+            rotate: { min: 0, max: 360 },
+            on: false
+        });
+        
+        // Emitir uma vez
+        emitter.explode(12, x, y);
+        
+        // Adicionar partículas circulares (glow)
+        const glowParticles = this.add.particles('particle_glow');
+        
+        const glowEmitter = glowParticles.createEmitter({
+            x: x,
+            y: y,
+            speed: { min: 80, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 2, end: 0 },
+            alpha: { start: 0.8, end: 0 },
+            lifespan: { min: 200, max: 400 },
+            quantity: 8,
+            tint: [0xff4400, 0xffaa00],
+            on: false
+        });
+        
+        glowEmitter.explode(8, x, y);
+        
+        // Limpar partículas após animação
+        this.time.delayedCall(700, () => {
+            particles.destroy();
+            glowParticles.destroy();
+        });
+    }
+    
+    createHitExplosion(x, y) {
+        // Explosão vermelha ao clicar em não-clicável
+        const particles = this.add.particles('particle_glow');
+        
+        const emitter = particles.createEmitter({
+            x: x,
+            y: y,
+            speed: { min: 100, max: 250 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 1.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: { min: 250, max: 500 },
+            quantity: 10,
+            tint: [0xff0000, 0xff3333, 0xcc0000],
+            gravityY: 200,
+            on: false
+        });
+        
+        emitter.explode(10, x, y);
+        
+        // Flash vermelho rápido na tela
+        this.cameras.main.flash(150, 255, 0, 0, false, null, this);
+        
+        // Limpar partículas após animação
+        this.time.delayedCall(600, () => {
+            particles.destroy();
+        });
     }
 
     endGame() {

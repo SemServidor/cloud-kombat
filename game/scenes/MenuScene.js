@@ -11,7 +11,7 @@ export default class MenuScene extends Phaser.Scene {
         this.load.image('hammer', 'assets/sprites/hammer.png');
         this.load.image('bat', 'assets/sprites/bat.png');
         this.load.image('crowbar', 'assets/sprites/crowbar.png');
-        this.load.image('logo', 'assets/ui/logo.jpeg');
+        this.load.image('logo', 'assets/ui/logo-padrao.png');
     }
 
     create() {

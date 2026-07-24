@@ -9,6 +9,9 @@ export default class Weapon extends Phaser.GameObjects.Sprite {
         this.type = type;
         this.setTexture(type);
         
+        // Detectar mobile
+        this.isMobile = scene.sys.game.device.input.touch;
+        
         // Obter dimensões do jogo
         const width = scene.scale.width;
         
@@ -19,21 +22,33 @@ export default class Weapon extends Phaser.GameObjects.Sprite {
         // Configurar profundidade para ficar acima de outros objetos
         this.setDepth(10);
         
-        // Inicialmente invisível até o mouse se mover
+        // Inicialmente invisível
         this.setVisible(false);
         
-        // Adicionar evento para mostrar a arma quando o mouse se move
-        scene.input.on('pointermove', (pointer) => {
-            this.setVisible(true);
-            this.x = pointer.x;
-            this.y = pointer.y;
-        });
+        // No mobile: mostrar arma brevemente ao tocar, no desktop: seguir mouse
+        if (this.isMobile) {
+            scene.input.on('pointerdown', (pointer) => {
+                this.x = pointer.x;
+                this.y = pointer.y;
+                this.setVisible(true);
+                // Ocultar após animação de swing
+                scene.time.delayedCall(250, () => this.setVisible(false));
+            });
+        } else {
+            scene.input.on('pointermove', (pointer) => {
+                this.setVisible(true);
+                this.x = pointer.x;
+                this.y = pointer.y;
+            });
+        }
     }
     
     update(x, y) {
-        // Atualizar posição para seguir o cursor
-        this.x = x;
-        this.y = y;
+        // Atualizar posição para seguir o cursor (desktop)
+        if (!this.isMobile) {
+            this.x = x;
+            this.y = y;
+        }
     }
     
     swing() {
