@@ -8,7 +8,7 @@ export default class GameOverScene extends Phaser.Scene {
     init(data) {
         this.score = data.score || 0;
         this.scoreManager = new ScoreManager();
-        this.activeField = 'name'; // Campo ativo para input
+        this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     }
 
     preload() {
@@ -16,7 +16,6 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     create() {
-        // Obter dimensões do jogo
         const width = this.scale.width;
         const height = this.scale.height;
         const centerX = width / 2;
@@ -38,13 +37,169 @@ export default class GameOverScene extends Phaser.Scene {
             align: 'center'
         }).setOrigin(0.5);
 
-        // === Formulário de registro ===
+        if (this.isMobile) {
+            this.createMobileForm(centerX, width, height);
+        } else {
+            this.createDesktopForm(centerX, width, height);
+        }
+        
+        // Adicionar espaço para logo alinhado à direita
+        this.addLogoSpace();
+    }
+
+    // === MOBILE: usa inputs HTML reais para abrir teclado virtual ===
+    createMobileForm(centerX, width, height) {
+        // Criar container HTML para os inputs
+        const formContainer = document.createElement('div');
+        formContainer.id = 'gameover-form';
+        formContainer.style.cssText = `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 70%;
+            max-width: 400px;
+        `;
+
+        const inputStyle = `
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 16px;
+            border: 2px solid #1cabc0;
+            border-radius: 6px;
+            outline: none;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        `;
+
+        // Input: Nome
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Nome';
+        nameInput.maxLength = 15;
+        nameInput.autocomplete = 'name';
+        nameInput.style.cssText = inputStyle;
+        formContainer.appendChild(nameInput);
+
+        // Input: Cargo
+        const cargoInput = document.createElement('input');
+        cargoInput.type = 'text';
+        cargoInput.placeholder = 'Cargo';
+        cargoInput.maxLength = 30;
+        cargoInput.autocomplete = 'organization-title';
+        cargoInput.style.cssText = inputStyle;
+        formContainer.appendChild(cargoInput);
+
+        // Input: Email
+        const emailInput = document.createElement('input');
+        emailInput.type = 'email';
+        emailInput.placeholder = 'Email';
+        emailInput.maxLength = 40;
+        emailInput.autocomplete = 'email';
+        emailInput.style.cssText = inputStyle;
+        formContainer.appendChild(emailInput);
+
+        // Botão salvar
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'SALVAR NO LEADERBOARD';
+        saveBtn.style.cssText = `
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #1cabc0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            margin-top: 5px;
+        `;
+        formContainer.appendChild(saveBtn);
+
+        // Botão voltar
+        const backBtn = document.createElement('button');
+        backBtn.textContent = 'VOLTAR AO MENU';
+        backBtn.style.cssText = `
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            background-color: #576a7e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        `;
+        formContainer.appendChild(backBtn);
+
+        document.body.appendChild(formContainer);
+
+        // Guardar referências para cleanup
+        this.htmlForm = formContainer;
+        this.htmlInputs = { name: nameInput, cargo: cargoInput, email: emailInput };
+
+        // Eventos
+        saveBtn.addEventListener('click', () => {
+            saveBtn.textContent = 'SALVANDO...';
+            saveBtn.disabled = true;
+            this.saveScoreMobile();
+        });
+
+        backBtn.addEventListener('click', () => {
+            this.cleanupHtmlForm();
+            this.scene.start('MenuScene');
+        });
+
+        // Focar no primeiro input
+        setTimeout(() => nameInput.focus(), 300);
+        
+        // Cleanup quando a cena for destruída
+        this.events.on('shutdown', () => this.cleanupHtmlForm());
+        this.events.on('destroy', () => this.cleanupHtmlForm());
+    }
+
+    saveScoreMobile() {
+        const playerName = (this.htmlInputs.name.value || '').trim() || 'Anônimo';
+        const playerCargo = (this.htmlInputs.cargo.value || '').trim() || '';
+        const playerEmail = (this.htmlInputs.email.value || '').trim() || '';
+
+        this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail)
+            .then(() => {
+                this.cleanupHtmlForm();
+                this.scene.start('MenuScene');
+            })
+            .catch(() => {
+                this.cleanupHtmlForm();
+                this.scene.start('MenuScene');
+            });
+    }
+
+    cleanupHtmlForm() {
+        if (this.htmlForm && this.htmlForm.parentNode) {
+            this.htmlForm.parentNode.removeChild(this.htmlForm);
+            this.htmlForm = null;
+        }
+    }
+
+    // === DESKTOP: usa input via teclado Phaser (comportamento original) ===
+    createDesktopForm(centerX, width, height) {
         const formStartY = height * 0.26;
         const fieldSpacing = height * 0.12;
         const fieldWidth = width * 0.45;
         const fieldHeight = height * 0.065;
         const fontSize = Math.max(18, Math.floor(width / 40));
         const labelFontSize = Math.max(16, Math.floor(width / 45));
+
+        this.activeField = 'name';
+        this.fieldBoxes = {};
+        this.fieldTexts = {};
+        this.fieldMaxChars = {};
 
         // Campo: Nome
         this.createFormField(centerX, formStartY, 'Nome:', 'name', fieldWidth, fieldHeight, fontSize, labelFontSize, 15);
@@ -98,14 +253,9 @@ export default class GameOverScene extends Phaser.Scene {
             .on('pointerdown', () => this.scene.start('MenuScene'))
             .on('pointerover', function() { this.setStyle({ backgroundColor: '#1cabc0' }); })
             .on('pointerout', function() { this.setStyle({ backgroundColor: '#576a7e' }); });
-            
-        // Adicionar espaço para logo alinhado à direita
-        this.addLogoSpace();
     }
     
     createFormField(centerX, y, label, fieldName, fieldWidth, fieldHeight, fontSize, labelFontSize, maxChars) {
-        const width = this.scale.width;
-        
         // Label
         this.add.text(centerX - fieldWidth / 2, y - fieldHeight * 0.8, label, {
             fontFamily: 'Arial',
@@ -122,12 +272,9 @@ export default class GameOverScene extends Phaser.Scene {
                 this.updateActiveFieldIndicator();
             });
 
-        // Guardar referência do box
-        if (!this.fieldBoxes) this.fieldBoxes = {};
         this.fieldBoxes[fieldName] = inputBox;
 
         // Texto do input
-        if (!this.fieldTexts) this.fieldTexts = {};
         this.fieldTexts[fieldName] = this.add.text(centerX, y, '', {
             fontFamily: 'Arial',
             fontSize: fontSize,
@@ -135,20 +282,16 @@ export default class GameOverScene extends Phaser.Scene {
             align: 'center'
         }).setOrigin(0.5);
 
-        // Guardar max chars
-        if (!this.fieldMaxChars) this.fieldMaxChars = {};
         this.fieldMaxChars[fieldName] = maxChars;
     }
     
     updateActiveFieldIndicator() {
         if (!this.fieldBoxes) return;
         
-        // Resetar todos os campos
         Object.keys(this.fieldBoxes).forEach(key => {
             this.fieldBoxes[key].setStrokeStyle(2, 0xcccccc);
         });
         
-        // Destacar o campo ativo
         if (this.fieldBoxes[this.activeField]) {
             this.fieldBoxes[this.activeField].setStrokeStyle(3, 0x1cabc0);
         }
@@ -158,15 +301,12 @@ export default class GameOverScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
-        // Criar um espaço quadrado para a logo no canto inferior direito
         const logoSize = Math.min(width, height) * 0.12;
         const logoX = width - logoSize/2 - 15;
         const logoY = height - logoSize/2 - 15;
         
-        // Adicionar um fundo para a logo
         this.add.rectangle(logoX, logoY, logoSize, logoSize, 0xffffff, 0.7);
             
-        // Se a imagem da logo estiver disponível, adicione-a aqui
         try {
             this.add.image(logoX, logoY, 'logo')
                 .setDisplaySize(logoSize * 0.9, logoSize * 0.9);
@@ -198,20 +338,19 @@ export default class GameOverScene extends Phaser.Scene {
             return;
         }
 
-        // Backspace - apagar último caractere
+        // Backspace
         if (event.keyCode === 8) {
             this.fieldTexts[this.activeField].text = currentText.slice(0, -1);
             return;
         }
 
-        // Enter - salvar pontuação
+        // Enter
         if (event.keyCode === 13) {
             this.saveScore();
             return;
         }
 
-        // Adicionar caractere se for válido
-        // Letras, números, espaço, @, ., _, -
+        // Adicionar caractere válido
         const validKey = /^[a-zA-Z0-9 @._\-áàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ]$/.test(event.key);
         if (validKey && event.key.length === 1) {
             this.fieldTexts[this.activeField].text += event.key;
@@ -224,12 +363,10 @@ export default class GameOverScene extends Phaser.Scene {
         const playerEmail = (this.fieldTexts['email']?.text || '').trim() || '';
         
         if (playerName) {
-            // Feedback visual imediato
             this.saveButton.setText('SALVANDO...');
             this.saveButton.setStyle({ backgroundColor: '#888888' });
             this.saveButton.disableInteractive();
             
-            // Salvar via ScoreManager (async com fallback local)
             this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail)
                 .then(() => {
                     this.saveButton.setText('SALVO!');
