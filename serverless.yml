@@ -9,6 +9,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   environment:
     LEADERBOARD_TABLE: !Ref LeaderboardTable
+    GAME_SECRET: ${param:gameSecret, 'cloud-kombat-s3cr3t-default'}
   iam:
     role:
       statements:
@@ -32,6 +33,21 @@ package:
     - '!**'
 
 functions:
+  startSession:
+    handler: backend/startSession.handler
+    package:
+      patterns:
+        - backend/startSession.js
+    events:
+      - http:
+          path: /session
+          method: post
+          cors: true
+      - http:
+          path: /session
+          method: options
+          cors: true
+
   submitScore:
     handler: backend/submitScore.handler
     package:
@@ -79,6 +95,8 @@ resources:
             AttributeType: S
           - AttributeName: negScore
             AttributeType: N
+          - AttributeName: sessionId
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -91,6 +109,12 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
+          - IndexName: SessionIndex
+            KeySchema:
+              - AttributeName: sessionId
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
         Tags:
           - Key: Name
             Value: ${self:custom.stackName}-leaderboard-${self:provider.stage}

@@ -38,7 +38,7 @@ export default class ScoreManager {
      * Salva a pontuação na API remota (DynamoDB)
      * Fallback para localStorage se a API não estiver disponível
      */
-    async addScore(score, name = 'Anônimo', cargo = '', email = '') {
+    async addScore(score, name = 'Anônimo', cargo = '', email = '', gameSession = null) {
         const scoreData = {
             name,
             cargo,
@@ -50,14 +50,21 @@ export default class ScoreManager {
         // Tentar salvar na API remota
         if (this.apiUrl) {
             try {
+                // Incluir dados de sessão anti-cheat
+                const payload = { ...scoreData };
+                if (gameSession) {
+                    payload.sessionId = gameSession.sessionId;
+                    payload.startTime = gameSession.startTime;
+                    payload.gameToken = gameSession.gameToken;
+                }
+
                 const response = await fetch(`${this.apiUrl}/scores`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(scoreData)
+                    body: JSON.stringify(payload)
                 });
                 
                 if (response.ok) {
-                    // Também salvar localmente como cache
                     this.addLocalScore(scoreData);
                     return true;
                 }

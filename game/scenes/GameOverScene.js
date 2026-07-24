@@ -7,6 +7,7 @@ export default class GameOverScene extends Phaser.Scene {
 
     init(data) {
         this.score = data.score || 0;
+        this.gameSession = data.gameSession || null;
         this.scoreManager = new ScoreManager();
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     }
@@ -169,7 +170,7 @@ export default class GameOverScene extends Phaser.Scene {
         const playerCargo = (this.htmlInputs.cargo.value || '').trim() || '';
         const playerEmail = (this.htmlInputs.email.value || '').trim() || '';
 
-        this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail)
+        this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail, this.gameSession)
             .then(() => {
                 this.cleanupHtmlForm();
                 this.scene.start('MenuScene');
@@ -367,7 +368,7 @@ export default class GameOverScene extends Phaser.Scene {
             this.saveButton.setStyle({ backgroundColor: '#888888' });
             this.saveButton.disableInteractive();
             
-            this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail)
+            this.scoreManager.addScore(this.score, playerName, playerCargo, playerEmail, this.gameSession)
                 .then(() => {
                     this.saveButton.setText('SALVO!');
                     this.time.delayedCall(1500, () => {
