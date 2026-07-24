@@ -78,7 +78,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bat', 'assets/sprites/bat128.png');
         this.load.image('crowbar', 'assets/sprites/crowbar128.png');
         this.load.image('heart', 'assets/ui/heart.png');
-        this.load.image('logo', 'assets/ui/logo.jpeg');
+        this.load.image('logo', 'assets/ui/logo-padrao.png');
         
         // Novas imagens
         this.load.image('network_switch', 'assets/sprites/network_switch128.png');

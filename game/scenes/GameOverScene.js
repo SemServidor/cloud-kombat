@@ -12,7 +12,7 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('logo', 'assets/ui/logo.png');
+        this.load.image('logo', 'assets/ui/logo-padrao.png');
     }
 
     create() {
