@@ -619,53 +619,50 @@ export default class GameScene extends Phaser.Scene {
     createParticleTextures() {
         // Criar textura de partícula quadrada (spark)
         const sparkGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-        sparkGraphics.fillStyle(0xffffff);
+        sparkGraphics.fillStyle(0xffff00);
         sparkGraphics.fillRect(0, 0, 8, 8);
         sparkGraphics.generateTexture('particle_spark', 8, 8);
         sparkGraphics.destroy();
         
         // Criar textura de partícula circular (glow)
         const glowGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-        glowGraphics.fillStyle(0xffffff);
+        glowGraphics.fillStyle(0xff8800);
         glowGraphics.fillCircle(6, 6, 6);
         glowGraphics.generateTexture('particle_glow', 12, 12);
         glowGraphics.destroy();
+        
+        // Partícula vermelha para hit
+        const redGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+        redGraphics.fillStyle(0xff0000);
+        redGraphics.fillCircle(6, 6, 6);
+        redGraphics.generateTexture('particle_red', 12, 12);
+        redGraphics.destroy();
     }
     
     createSmashExplosion(x, y) {
-        // Explosão de partículas ao destruir objeto (amarelo/laranja)
+        // Explosão de partículas ao destruir objeto
         const particles = this.add.particles('particle_spark');
         
         const emitter = particles.createEmitter({
-            x: x,
-            y: y,
             speed: { min: 150, max: 350 },
             angle: { min: 0, max: 360 },
             scale: { start: 1.5, end: 0 },
             lifespan: { min: 300, max: 600 },
-            quantity: 12,
-            tint: [0xffff00, 0xff8800, 0xffaa00, 0xffffff],
             gravityY: 300,
-            rotate: { min: 0, max: 360 },
             on: false
         });
         
-        // Emitir uma vez
         emitter.explode(12, x, y);
         
-        // Adicionar partículas circulares (glow)
+        // Partículas glow
         const glowParticles = this.add.particles('particle_glow');
         
         const glowEmitter = glowParticles.createEmitter({
-            x: x,
-            y: y,
             speed: { min: 80, max: 200 },
             angle: { min: 0, max: 360 },
             scale: { start: 2, end: 0 },
             alpha: { start: 0.8, end: 0 },
             lifespan: { min: 200, max: 400 },
-            quantity: 8,
-            tint: [0xff4400, 0xffaa00],
             on: false
         });
         
@@ -680,18 +677,14 @@ export default class GameScene extends Phaser.Scene {
     
     createHitExplosion(x, y) {
         // Explosão vermelha ao clicar em não-clicável
-        const particles = this.add.particles('particle_glow');
+        const particles = this.add.particles('particle_red');
         
         const emitter = particles.createEmitter({
-            x: x,
-            y: y,
             speed: { min: 100, max: 250 },
             angle: { min: 0, max: 360 },
             scale: { start: 1.8, end: 0 },
             alpha: { start: 1, end: 0 },
             lifespan: { min: 250, max: 500 },
-            quantity: 10,
-            tint: [0xff0000, 0xff3333, 0xcc0000],
             gravityY: 200,
             on: false
         });
