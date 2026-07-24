@@ -7,14 +7,94 @@ provider:
   runtime: nodejs18.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
+  environment:
+    LEADERBOARD_TABLE: !Ref LeaderboardTable
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:Query
+            - dynamodb:GetItem
+          Resource:
+            - !GetAtt LeaderboardTable.Arn
+            - !Sub "${LeaderboardTable.Arn}/index/*"
 
 custom:
   stackName: ${param:stackName, 'sem-servidor-game'}
   domainName: ${param:domainName, ''}
   certificateArn: ${param:certificateArn, ''}
 
+package:
+  individually: true
+  patterns:
+    - '!**'
+
+functions:
+  submitScore:
+    handler: backend/submitScore.handler
+    package:
+      patterns:
+        - backend/submitScore.js
+        - node_modules/@aws-sdk/**
+    events:
+      - http:
+          path: /scores
+          method: post
+          cors: true
+      - http:
+          path: /scores
+          method: options
+          cors: true
+
+  getLeaderboard:
+    handler: backend/getLeaderboard.handler
+    package:
+      patterns:
+        - backend/getLeaderboard.js
+        - node_modules/@aws-sdk/**
+    events:
+      - http:
+          path: /scores
+          method: get
+          cors: true
+      - http:
+          path: /scores
+          method: options
+          cors: true
+
 resources:
   Resources:
+    # DynamoDB Table para Leaderboard
+    LeaderboardTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.stackName}-leaderboard-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: gameId
+            AttributeType: S
+          - AttributeName: negScore
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: LeaderboardIndex
+            KeySchema:
+              - AttributeName: gameId
+                KeyType: HASH
+              - AttributeName: negScore
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Name
+            Value: ${self:custom.stackName}-leaderboard-${self:provider.stage}
+
     # S3 Bucket para armazenar o jogo estático
     WebsiteBucket:
       Type: AWS::S3::Bucket
@@ -104,3 +184,11 @@ resources:
     CloudFrontDistributionId:
       Description: ID da distribuição CloudFront para invalidação de cache
       Value: !Ref CloudFrontDistribution
+
+    ApiUrl:
+      Description: URL da API do Leaderboard
+      Value: !Sub "https://${ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}"
+
+    LeaderboardTableName:
+      Description: Nome da tabela DynamoDB do Leaderboard
+      Value: !Ref LeaderboardTable

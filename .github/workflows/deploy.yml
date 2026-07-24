@@ -24,10 +24,9 @@ jobs:
           npm install -g serverless@3.x
           npm install
 
-      - name: Build game
-        run: |
-          mkdir -p dist
-          cp -r index.html main.js game assets styles dist/
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: backend
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -39,7 +38,26 @@ jobs:
       - name: Deploy with Serverless Framework
         id: deploy
         run: |
-          serverless deploy --param="stackName=${{ secrets.STACK_NAME }}" --param="domainName=${{ secrets.DOMAIN_NAME }}" --param="certificateArn=${{ secrets.CERTIFICATE_ARN }}" --stage=${{ secrets.STAGE }} --verbose --region=${{ secrets.AWS_REGION }}
+          serverless deploy --param="stackName=${{ secrets.STACK_NAME }}" --param="domainName=${{ secrets.DOMAIN_NAME }}" --param="certificateArn=${{ secrets.CERTIFICATE_ARN }}" --stage=${{ secrets.STAGE }} --verbose --region=${{ secrets.AWS_REGION }} 2>&1 | tee deploy-output.txt
+
+      - name: Extract API URL and update config
+        run: |
+          # Extrair a URL da API do output do deploy
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name sem-servidor-smash-mode-${{ secrets.STAGE }} \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
+            --output text --region ${{ secrets.AWS_REGION }})
+          
+          echo "API URL: $API_URL"
+          
+          # Atualizar o config.js com a URL da API
+          echo "// Configuração do jogo - URL da API gerada automaticamente pelo deploy" > game/config.js
+          echo "window.LEADERBOARD_API_URL = '${API_URL}';" >> game/config.js
+
+      - name: Build game
+        run: |
+          mkdir -p dist
+          cp -r index.html main.js game assets styles dist/
 
       - name: Deploy static assets
         run: |

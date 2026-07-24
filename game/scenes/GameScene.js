@@ -14,29 +14,35 @@ export default class GameScene extends Phaser.Scene {
         this.gameTime = 0;
         this.maxGameTime = 60000; // 1 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
-        this.minSpawnRate = 500; // Tempo mínimo entre spawns (aumentado de 400)
+        this.minSpawnRate = 500; // Tempo mínimo entre spawns
         this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade
         
-        // Contadores para equilibrar os objetos
+        // Sistema de deck shuffled para equilibrar spawns
+        this.spawnDeck = [];
+        this.deckSize = 10; // Cada deck tem 10 objetos pré-definidos
+        
+        // Distribuição por deck (total = 10):
+        // Clicáveis (7): server x3, networkSwitch x2, monitor x2
+        // Não-clicáveis (3): cloud x2, serverlessLogo x1
+        this.deckTemplate = [
+            'server', 'server', 'server',
+            'networkSwitch', 'networkSwitch',
+            'monitor', 'monitor',
+            'cloud', 'cloud',
+            'serverlessLogo'
+        ];
+        
+        // Contadores para estatísticas
         this.clickableSpawned = 0;
         this.nonClickableSpawned = 0;
         
-        // Rastreamento de objetos para equilíbrio
+        // Rastreamento de objetos
         this.objectCounts = {
             server: 0,
             networkSwitch: 0,
             monitor: 0,
             cloud: 0,
             serverlessLogo: 0
-        };
-        
-        // Probabilidades base para cada tipo de objeto
-        this.baseSpawnChances = {
-            server: 0.4,
-            networkSwitch: 0.2,
-            monitor: 0.2,
-            cloud: 0.15,
-            serverlessLogo: 0.05
         };
     }
 
@@ -50,6 +56,9 @@ export default class GameScene extends Phaser.Scene {
         // Resetar contadores
         this.clickableSpawned = 0;
         this.nonClickableSpawned = 0;
+        
+        // Resetar deck de spawn
+        this.spawnDeck = [];
         
         // Resetar contagem de objetos
         this.objectCounts = {
@@ -226,11 +235,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     spawnObjects() {
-        // Calcular as probabilidades ajustadas com base no equilíbrio
-        const adjustedChances = this.calculateAdjustedSpawnChances();
+        // Se o deck está vazio, gerar um novo deck embaralhado
+        if (this.spawnDeck.length === 0) {
+            this.spawnDeck = this.generateShuffledDeck();
+        }
         
-        // Escolher um tipo de objeto com base nas probabilidades ajustadas
-        const objectType = this.selectObjectType(adjustedChances);
+        // Retirar o próximo objeto do deck
+        const objectType = this.spawnDeck.pop();
         
         // Spawnar o objeto selecionado
         switch (objectType) {
@@ -252,65 +263,77 @@ export default class GameScene extends Phaser.Scene {
         }
     }
     
-    calculateAdjustedSpawnChances() {
-        // Calcular o total de objetos spawned
-        const totalSpawned = this.clickableSpawned + this.nonClickableSpawned;
+    generateShuffledDeck() {
+        // Criar uma cópia do template do deck
+        const deck = [...this.deckTemplate];
         
-        // Se não houver objetos spawned, usar as probabilidades base
-        if (totalSpawned === 0) {
-            return { ...this.baseSpawnChances };
+        // Fisher-Yates shuffle com restrição: evitar mais de 2 não-clicáveis consecutivos
+        let shuffled;
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        do {
+            shuffled = [...deck];
+            // Fisher-Yates shuffle
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            attempts++;
+        } while (!this.isValidDeck(shuffled) && attempts < maxAttempts);
+        
+        // Se não conseguiu um deck válido após N tentativas, forçar correção
+        if (!this.isValidDeck(shuffled)) {
+            shuffled = this.forceValidDeck(shuffled);
         }
         
-        // Calcular a proporção atual de clicáveis vs não-clicáveis
-        const currentClickableRatio = this.clickableSpawned / totalSpawned;
-        
-        // Queremos manter uma proporção de aproximadamente 70% clicáveis e 30% não-clicáveis
-        const targetClickableRatio = 0.7;
-        
-        // Ajustar as probabilidades com base no desvio da proporção alvo
-        const adjustment = (targetClickableRatio - currentClickableRatio) * 0.3; // Fator de ajuste
-        
-        // Criar cópia das probabilidades base
-        const adjusted = { ...this.baseSpawnChances };
-        
-        // Ajustar probabilidades para objetos clicáveis
-        adjusted.server += adjustment * 0.5;
-        adjusted.networkSwitch += adjustment * 0.25;
-        adjusted.monitor += adjustment * 0.25;
-        
-        // Ajustar probabilidades para objetos não-clicáveis
-        adjusted.cloud -= adjustment * 0.8;
-        adjusted.serverlessLogo -= adjustment * 0.2;
-        
-        // Garantir que todas as probabilidades estejam entre 0.05 e 0.6
-        Object.keys(adjusted).forEach(key => {
-            adjusted[key] = Math.max(0.05, Math.min(0.6, adjusted[key]));
-        });
-        
-        // Normalizar para que a soma seja 1
-        const sum = Object.values(adjusted).reduce((a, b) => a + b, 0);
-        Object.keys(adjusted).forEach(key => {
-            adjusted[key] = adjusted[key] / sum;
-        });
-        
-        return adjusted;
+        return shuffled;
     }
     
-    selectObjectType(chances) {
-        // Gerar um número aleatório entre 0 e 1
-        const rand = Math.random();
+    isValidDeck(deck) {
+        // Verificar que não há mais de 2 não-clicáveis consecutivos
+        const nonClickable = ['cloud', 'serverlessLogo'];
+        let consecutiveNonClickable = 0;
         
-        // Calcular probabilidades cumulativas
-        let cumulative = 0;
-        for (const [type, chance] of Object.entries(chances)) {
-            cumulative += chance;
-            if (rand < cumulative) {
-                return type;
+        for (const item of deck) {
+            if (nonClickable.includes(item)) {
+                consecutiveNonClickable++;
+                if (consecutiveNonClickable > 2) {
+                    return false;
+                }
+            } else {
+                consecutiveNonClickable = 0;
             }
         }
+        return true;
+    }
+    
+    forceValidDeck(deck) {
+        // Separar em clicáveis e não-clicáveis
+        const nonClickable = ['cloud', 'serverlessLogo'];
+        const clickables = deck.filter(item => !nonClickable.includes(item));
+        const nonClickables = deck.filter(item => nonClickable.includes(item));
         
-        // Fallback para servidor (não deveria chegar aqui)
-        return 'server';
+        // Embaralhar cada grupo separadamente
+        for (let i = clickables.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [clickables[i], clickables[j]] = [clickables[j], clickables[i]];
+        }
+        for (let i = nonClickables.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [nonClickables[i], nonClickables[j]] = [nonClickables[j], nonClickables[i]];
+        }
+        
+        // Intercalar: colocar não-clicáveis em posições distribuídas
+        const result = [...clickables];
+        const spacing = Math.floor(clickables.length / (nonClickables.length + 1));
+        
+        for (let i = 0; i < nonClickables.length; i++) {
+            const insertPos = Math.min(spacing * (i + 1) + Math.floor(Math.random() * 2), result.length);
+            result.splice(insertPos, 0, nonClickables[i]);
+        }
+        
+        return result;
     }
 
     spawnServer() {
