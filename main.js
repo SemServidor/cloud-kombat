@@ -6,23 +6,28 @@ import GameOverScene from './game/scenes/GameOverScene.js';
 const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 // Configuração do jogo com suporte responsivo e mobile
+const scaleConfig = {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1000,
+    height: 600,
+    max: {
+        width: 1920,
+        height: 1080
+    }
+};
+
+// Adicionar min somente no desktop (evita erro no Phaser com undefined)
+if (!isMobile) {
+    scaleConfig.min = {
+        width: 800,
+        height: 600
+    };
+}
+
 const config = {
     type: Phaser.AUTO,
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 1000,
-        height: 600,
-        // Sem min em mobile para permitir telas menores
-        min: isMobile ? undefined : {
-            width: 800,
-            height: 600
-        },
-        max: {
-            width: 1920,
-            height: 1080
-        }
-    },
+    scale: scaleConfig,
     parent: 'game-container',
     physics: {
         default: 'arcade',
@@ -35,7 +40,7 @@ const config = {
     pixelArt: true,
     backgroundColor: '#ffffff',
     input: {
-        activePointers: 3, // Suportar múltiplos toques
+        activePointers: 3,
         touch: {
             capture: true
         }

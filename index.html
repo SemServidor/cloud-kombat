@@ -5,69 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="screen-orientation" content="landscape">
     <title>Sem Servidor: Smash Mode</title>
     <link rel="stylesheet" href="styles/main.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
 </head>
 <body>
-    <!-- Overlay para pedir rotação em portrait -->
+    <div id="game-container"></div>
+
+    <!-- Overlay fica POR CIMA do jogo, não esconde o container -->
     <div id="rotate-overlay">
         <div class="rotate-content">
             <div class="rotate-icon">📱↻</div>
             <p>Gire o celular para jogar</p>
         </div>
     </div>
-    
-    <div id="game-container"></div>
 
-    <!-- Detecção de orientação via JS (funciona no iOS real) -->
     <script>
     (function() {
         var overlay = document.getElementById('rotate-overlay');
         var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        function checkOrientation() {
-            if (!isMobile) {
-                overlay.classList.remove('show');
-                return;
-            }
-            
-            // No iOS, window.innerWidth/Height é a forma mais confiável
-            var w = window.innerWidth;
-            var h = window.innerHeight;
-            
-            // Também checar screen.orientation se disponível
-            var isLandscape = w > h;
-            
-            if (window.screen && window.screen.orientation) {
-                var angle = window.screen.orientation.angle;
-                isLandscape = (angle === 90 || angle === -90 || angle === 270);
-            }
-            
-            // Fallback: se width > height, é landscape
-            if (w > h) {
-                isLandscape = true;
-            }
-            
-            if (isLandscape) {
-                overlay.classList.remove('show');
-            } else {
-                overlay.classList.add('show');
-            }
+        if (!isMobile) {
+            overlay.style.display = 'none';
+            return;
         }
         
-        // Checar em múltiplos eventos (iOS precisa de todos)
+        function checkOrientation() {
+            var isLandscape = window.innerWidth > window.innerHeight;
+            overlay.style.display = isLandscape ? 'none' : 'flex';
+        }
+        
         window.addEventListener('resize', checkOrientation);
         window.addEventListener('orientationchange', function() {
-            // iOS precisa de delay após orientationchange
-            setTimeout(checkOrientation, 100);
-            setTimeout(checkOrientation, 300);
+            setTimeout(checkOrientation, 150);
+            setTimeout(checkOrientation, 500);
         });
         
-        // Check inicial
         checkOrientation();
-        // iOS às vezes reporta dimensões erradas no load, re-checar
         setTimeout(checkOrientation, 500);
     })();
     </script>
