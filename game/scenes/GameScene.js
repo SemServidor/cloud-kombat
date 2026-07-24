@@ -94,17 +94,23 @@ export default class GameScene extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         
+        // Detectar mobile
+        this.isMobile = this.sys.game.device.input.touch;
+        
         // Criar grupos para os diferentes tipos de objetos
         this.clickableObjects = this.physics.add.group();
         this.nonClickableObjects = this.physics.add.group();
         
-        // Criar arma selecionada
+        // Criar arma selecionada (oculta no mobile - o dedo é a arma)
         this.weapon = new Weapon(this, this.selectedWeapon);
+        if (this.isMobile) {
+            this.weapon.setVisible(false);
+        }
         
         // Configurar interface do usuário
         this.setupUI();
         
-        // Configurar eventos de mouse
+        // Configurar eventos de mouse/touch
         this.input.on('pointerdown', this.handleClick, this);
         
         // Configurar temporizadores
@@ -345,15 +351,16 @@ export default class GameScene extends Phaser.Scene {
         const y = height + 50;
         
         // Velocidade aumenta com o tempo (reduzido)
-        const speedFactor = 1 + (this.gameTime / 45000); // Aumenta 100% a cada 45 segundos (era 30s)
+        const speedFactor = 1 + (this.gameTime / 45000);
         const velocityX = Phaser.Math.Between(-100, 100) * speedFactor;
-        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-380, -280) * speedFactor;
         
         const server = new Server(this, x, y);
         this.clickableObjects.add(server);
         
-        // Escala baseada no tamanho da tela
-        server.setScale(Math.max(0.8, width / 1000));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 1.0 : 0.8;
+        server.setScale(Math.max(baseScale, width / 1000));
         
         // Aplicar física
         server.setVelocity(velocityX, velocityY);
@@ -372,16 +379,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor (reduzida)
-        const speedFactor = 1 + (this.gameTime / 50000); // Reduzido de 35000
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 50000);
         const velocityX = Phaser.Math.Between(-90, 90) * speedFactor;
-        const velocityY = Phaser.Math.Between(-360, -260) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-360, -260) * speedFactor;
         
         const networkSwitch = new NetworkSwitch(this, x, y);
         this.clickableObjects.add(networkSwitch);
         
-        // Escala baseada no tamanho da tela
-        networkSwitch.setScale(Math.max(0.75, width / 1100));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.95 : 0.75;
+        networkSwitch.setScale(Math.max(baseScale, width / 1100));
         
         // Aplicar física
         networkSwitch.setVelocity(velocityX, velocityY);
@@ -400,16 +408,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade similar ao servidor (reduzida)
-        const speedFactor = 1 + (this.gameTime / 48000); // Reduzido de 32000
+        // Velocidade similar ao servidor
+        const speedFactor = 1 + (this.gameTime / 48000);
         const velocityX = Phaser.Math.Between(-95, 95) * speedFactor;
-        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-370, -270) * speedFactor;
         
         const monitor = new Monitor(this, x, y);
         this.clickableObjects.add(monitor);
         
-        // Escala baseada no tamanho da tela
-        monitor.setScale(Math.max(0.78, width / 1050));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.98 : 0.78;
+        monitor.setScale(Math.max(baseScale, width / 1050));
         
         // Aplicar física
         monitor.setVelocity(velocityX, velocityY);
@@ -428,16 +437,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco menor que os servidores (reduzida)
-        const speedFactor = 1 + (this.gameTime / 60000); // Reduzido de 45000
+        // Velocidade um pouco menor que os servidores
+        const speedFactor = 1 + (this.gameTime / 60000);
         const velocityX = Phaser.Math.Between(-80, 80) * speedFactor;
-        const velocityY = Phaser.Math.Between(-330, -230) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-330, -230) * speedFactor;
         
         const cloud = new Cloud(this, x, y);
         this.nonClickableObjects.add(cloud);
         
-        // Escala baseada no tamanho da tela
-        cloud.setScale(Math.max(0.7, width / 1100));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.9 : 0.7;
+        cloud.setScale(Math.max(baseScale, width / 1100));
         
         // Aplicar física
         cloud.setVelocity(velocityX, velocityY);
@@ -455,16 +465,17 @@ export default class GameScene extends Phaser.Scene {
         const x = Phaser.Math.Between(width * 0.1, width * 0.9);
         const y = height + 50;
         
-        // Velocidade um pouco mais rápida que as nuvens (reduzida)
-        const speedFactor = 1 + (this.gameTime / 55000); // Reduzido de 40000
+        // Velocidade um pouco mais rápida que as nuvens
+        const speedFactor = 1 + (this.gameTime / 55000);
         const velocityX = Phaser.Math.Between(-85, 85) * speedFactor;
-        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor; // Velocidade base reduzida
+        const velocityY = Phaser.Math.Between(-350, -250) * speedFactor;
         
         const logo = new ServerlessLogo(this, x, y);
         this.nonClickableObjects.add(logo);
         
-        // Escala baseada no tamanho da tela
-        logo.setScale(Math.max(0.65, width / 1200));
+        // Escala baseada no tamanho da tela (maior no mobile)
+        const baseScale = this.isMobile ? 0.85 : 0.65;
+        logo.setScale(Math.max(baseScale, width / 1200));
         
         // Aplicar física
         logo.setVelocity(velocityX, velocityY);
@@ -478,10 +489,21 @@ export default class GameScene extends Phaser.Scene {
         // Animar a arma
         this.weapon.swing();
         
+        // Área de toque expandida para mobile (20% maior)
+        const isMobile = this.sys.game.device.input.touch;
+        const hitPadding = isMobile ? 15 : 0;
+        
         // Verificar colisão com objetos clicáveis
         let hitClickable = false;
         this.clickableObjects.getChildren().forEach(obj => {
-            if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+            const bounds = obj.getBounds();
+            // Expandir a hit area para facilitar o toque no mobile
+            bounds.x -= hitPadding;
+            bounds.y -= hitPadding;
+            bounds.width += hitPadding * 2;
+            bounds.height += hitPadding * 2;
+            
+            if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
                 this.smashClickable(obj);
                 hitClickable = true;
             }
@@ -490,7 +512,13 @@ export default class GameScene extends Phaser.Scene {
         // Verificar colisão com objetos não-clicáveis (apenas se não acertou clicável)
         if (!hitClickable) {
             this.nonClickableObjects.getChildren().forEach(obj => {
-                if (Phaser.Geom.Rectangle.Contains(obj.getBounds(), pointer.x, pointer.y)) {
+                const bounds = obj.getBounds();
+                bounds.x -= hitPadding;
+                bounds.y -= hitPadding;
+                bounds.width += hitPadding * 2;
+                bounds.height += hitPadding * 2;
+                
+                if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
                     this.hitNonClickable(obj);
                 }
             });
