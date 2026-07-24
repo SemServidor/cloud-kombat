@@ -8,12 +8,9 @@ export default class MenuScene extends Phaser.Scene {
 
     preload() {
         // Carregar imagens para o menu
-        this.load.image('background', 'assets/ui/background.png');
-        this.load.image('title', 'assets/ui/title.png');
         this.load.image('hammer', 'assets/sprites/hammer.png');
         this.load.image('bat', 'assets/sprites/bat.png');
         this.load.image('crowbar', 'assets/sprites/crowbar.png');
-        this.load.image('start-button', 'assets/ui/start-button.png');
         this.load.image('logo', 'assets/ui/logo.jpeg');
     }
 
@@ -193,8 +190,16 @@ export default class MenuScene extends Phaser.Scene {
             align: 'center'
         }).setOrigin(0.5);
 
-        // Buscar pontuações do backend (async)
-        scoreManager.getScores(10).then(scores => {
+        // Buscar pontuações do backend (async) com timeout de 5s
+        const fetchWithTimeout = Promise.race([
+            scoreManager.getScores(10),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        ]);
+
+        fetchWithTimeout.then(scores => {
+            // Verificar se a cena ainda está ativa (o jogador pode ter iniciado o jogo)
+            if (!this.scene.isActive()) return;
+            
             // Remover texto de carregamento
             loadingText.destroy();
             
@@ -210,7 +215,8 @@ export default class MenuScene extends Phaser.Scene {
                 }).setOrigin(0.5);
             }
         }).catch(() => {
-            loadingText.setText('Erro ao carregar');
+            if (!this.scene.isActive()) return;
+            loadingText.setText('Nenhuma pontuação registrada');
         });
     }
     
