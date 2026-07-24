@@ -11,10 +11,10 @@ body {
     align-items: center;
     width: 100vw;
     height: 100vh;
-    height: 100dvh; /* dynamic viewport height para mobile */
+    height: 100dvh;
     font-family: 'Courier New', Courier, monospace;
     overflow: hidden;
-    touch-action: none; /* prevenir gestos do browser no mobile */
+    touch-action: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
@@ -51,7 +51,7 @@ canvas {
     height: 100% !important;
 }
 
-/* Overlay para rotação - visível apenas em portrait no mobile */
+/* Overlay para rotação - controlado via JS com classe .show */
 #rotate-overlay {
     display: none;
     position: fixed;
@@ -65,6 +65,14 @@ canvas {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+}
+
+#rotate-overlay.show {
+    display: flex;
+}
+
+#rotate-overlay.show ~ #game-container {
+    display: none;
 }
 
 .rotate-content {
@@ -87,31 +95,6 @@ canvas {
 @keyframes rotateHint {
     0%, 100% { transform: rotate(0deg); }
     50% { transform: rotate(90deg); }
-}
-
-/* Mostrar overlay de rotação em mobile portrait */
-@media (max-width: 768px) and (orientation: portrait) {
-    #rotate-overlay {
-        display: flex;
-    }
-    
-    #game-container {
-        display: none;
-    }
-}
-
-@media (max-width: 768px) and (orientation: landscape) {
-    #rotate-overlay {
-        display: none;
-    }
-    
-    #game-container {
-        display: block;
-    }
-    
-    body {
-        padding: 0;
-    }
 }
 
 /* Safe area para iPhones com notch */
