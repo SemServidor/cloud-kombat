@@ -12,7 +12,7 @@ export default class GameScene extends Phaser.Scene {
         this.score = 0;
         this.lives = 3;
         this.gameTime = 0;
-        this.maxGameTime = 60000; // 1 minuto em milissegundos
+        this.maxGameTime = 90000; // 1.5 minuto em milissegundos
         this.spawnRate = 2000; // Tempo inicial entre spawns em ms
         this.minSpawnRate = 500; // Tempo mínimo entre spawns
         this.difficultyInterval = 5000; // A cada 5 segundos aumenta a dificuldade
