@@ -1,3 +1,5 @@
+import ScoreManager from '../utils/ScoreManager.js';
+
 export default class MenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MenuScene' });
@@ -167,19 +169,8 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     showLeaderboard(rightSide, height) {
-        // Obter pontuações do localStorage
-        let scores = [];
-        try {
-            const savedScores = localStorage.getItem('semServidorScores');
-            if (savedScores) {
-                scores = JSON.parse(savedScores);
-            }
-        } catch (e) {
-            console.error('Erro ao carregar pontuações:', e);
-        }
-
-        // Mostrar top 10 pontuações
         const width = this.scale.width;
+        const scoreManager = new ScoreManager();
         
         // Título do leaderboard
         this.add.text(rightSide, height * 0.25, 'TOP 10 PONTUAÇÕES', {
@@ -191,75 +182,114 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Container para o leaderboard
-        const leaderboardBg = this.add.rectangle(rightSide, height * 0.55, width * 0.4, height * 0.5, 0xf8f8f8, 0.7)
+        this.add.rectangle(rightSide, height * 0.55, width * 0.4, height * 0.5, 0xf8f8f8, 0.7)
             .setStrokeStyle(2, 0x1cabc0);
 
-        if (scores.length > 0) {
-            const topScores = scores.sort((a, b) => b.score - a.score).slice(0, 10);
+        // Texto de carregamento
+        const loadingText = this.add.text(rightSide, height * 0.5, 'Carregando...', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(16, Math.floor(width / 45)),
+            color: '#576a7e',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // Buscar pontuações do backend (async)
+        scoreManager.getScores(10).then(scores => {
+            // Remover texto de carregamento
+            loadingText.destroy();
             
-            // Cabeçalho da tabela
-            this.add.text(rightSide - width * 0.15, height * 0.33, 'Posição', {
+            if (scores && scores.length > 0) {
+                const topScores = scores.sort((a, b) => b.score - a.score).slice(0, 10);
+                this.renderLeaderboardTable(rightSide, height, width, topScores);
+            } else {
+                this.add.text(rightSide, height * 0.5, 'Nenhuma pontuação registrada', {
+                    fontFamily: 'Arial',
+                    fontSize: Math.max(16, Math.floor(width / 45)),
+                    color: '#576a7e',
+                    align: 'center'
+                }).setOrigin(0.5);
+            }
+        }).catch(() => {
+            loadingText.setText('Erro ao carregar');
+        });
+    }
+    
+    renderLeaderboardTable(rightSide, height, width, topScores) {
+        // Cabeçalho da tabela
+        this.add.text(rightSide - width * 0.15, height * 0.33, '#', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(16, Math.floor(width / 45)),
+            color: '#1cabc0',
+            fontWeight: 'bold'
+        }).setOrigin(0, 0.5);
+        
+        this.add.text(rightSide - width * 0.12, height * 0.33, 'Nome', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(16, Math.floor(width / 45)),
+            color: '#1cabc0',
+            fontWeight: 'bold'
+        }).setOrigin(0, 0.5);
+        
+        this.add.text(rightSide + width * 0.05, height * 0.33, 'Cargo', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(16, Math.floor(width / 45)),
+            color: '#1cabc0',
+            fontWeight: 'bold'
+        }).setOrigin(0, 0.5);
+        
+        this.add.text(rightSide + width * 0.14, height * 0.33, 'Pts', {
+            fontFamily: 'Arial',
+            fontSize: Math.max(16, Math.floor(width / 45)),
+            color: '#1cabc0',
+            fontWeight: 'bold'
+        }).setOrigin(0, 0.5);
+        
+        // Listar pontuações em formato de tabela
+        topScores.forEach((score, index) => {
+            const yPos = height * (0.38 + index * 0.042);
+            const isFirst = index === 0;
+            const textColor = isFirst ? '#1cabc0' : '#576a7e';
+            
+            // Posição
+            this.add.text(rightSide - width * 0.15, yPos, `${index + 1}.`, {
                 fontFamily: 'Arial',
-                fontSize: Math.max(16, Math.floor(width / 45)),
-                color: '#1cabc0',
-                fontWeight: 'bold'
+                fontSize: Math.max(13, Math.floor(width / 55)),
+                color: textColor,
+                fontWeight: isFirst ? 'bold' : 'normal'
             }).setOrigin(0, 0.5);
             
-            this.add.text(rightSide - width * 0.05, height * 0.33, 'Nome', {
+            // Nome (truncado se necessário)
+            let displayName = score.name || 'Anônimo';
+            if (displayName.length > 10) {
+                displayName = displayName.substring(0, 9) + '…';
+            }
+            
+            this.add.text(rightSide - width * 0.12, yPos, displayName, {
                 fontFamily: 'Arial',
-                fontSize: Math.max(16, Math.floor(width / 45)),
-                color: '#1cabc0',
-                fontWeight: 'bold'
+                fontSize: Math.max(13, Math.floor(width / 55)),
+                color: textColor,
+                fontWeight: isFirst ? 'bold' : 'normal'
             }).setOrigin(0, 0.5);
             
-            this.add.text(rightSide + width * 0.12, height * 0.33, 'Pontos', {
+            // Cargo (truncado)
+            let displayCargo = score.cargo || '';
+            if (displayCargo.length > 10) {
+                displayCargo = displayCargo.substring(0, 9) + '…';
+            }
+            
+            this.add.text(rightSide + width * 0.05, yPos, displayCargo, {
                 fontFamily: 'Arial',
-                fontSize: Math.max(16, Math.floor(width / 45)),
-                color: '#1cabc0',
-                fontWeight: 'bold'
+                fontSize: Math.max(12, Math.floor(width / 60)),
+                color: textColor
             }).setOrigin(0, 0.5);
             
-            // Listar pontuações em formato de tabela
-            topScores.forEach((score, index) => {
-                const yPos = height * (0.4 + index * 0.04);
-                
-                // Posição
-                this.add.text(rightSide - width * 0.15, yPos, `${index + 1}.`, {
-                    fontFamily: 'Arial',
-                    fontSize: Math.max(14, Math.floor(width / 50)),
-                    color: '#576a7e',
-                    fontWeight: index === 0 ? 'bold' : 'normal'
-                }).setOrigin(0, 0.5);
-                
-                // Nome (truncado se necessário)
-                let displayName = score.name;
-                if (displayName.length > 12) {
-                    displayName = displayName.substring(0, 10) + '...';
-                }
-                
-                this.add.text(rightSide - width * 0.05, yPos, displayName, {
-                    fontFamily: 'Arial',
-                    fontSize: Math.max(14, Math.floor(width / 50)),
-                    color: '#576a7e',
-                    fontWeight: index === 0 ? 'bold' : 'normal'
-                }).setOrigin(0, 0.5);
-                
-                // Pontuação
-                this.add.text(rightSide + width * 0.12, yPos, `${score.score}`, {
-                    fontFamily: 'Arial',
-                    fontSize: Math.max(14, Math.floor(width / 50)),
-                    color: '#576a7e',
-                    fontWeight: index === 0 ? 'bold' : 'normal'
-                }).setOrigin(0, 0.5);
-            });
-        } else {
-            // Mensagem quando não há pontuações
-            this.add.text(rightSide, height * 0.5, 'Nenhuma pontuação registrada', {
+            // Pontuação
+            this.add.text(rightSide + width * 0.14, yPos, `${score.score}`, {
                 fontFamily: 'Arial',
-                fontSize: Math.max(16, Math.floor(width / 45)),
-                color: '#576a7e',
-                align: 'center'
-            }).setOrigin(0.5);
-        }
+                fontSize: Math.max(13, Math.floor(width / 55)),
+                color: textColor,
+                fontWeight: isFirst ? 'bold' : 'normal'
+            }).setOrigin(0, 0.5);
+        });
     }
 }
