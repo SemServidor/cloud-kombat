@@ -100,6 +100,9 @@ export default class GameScene extends Phaser.Scene {
         // Criar texturas de partículas via canvas (sem assets externos)
         this.createParticleTextures();
         
+        // Solicitar token de sessão anti-cheat
+        this.requestGameSession();
+        
         // Criar grupos para os diferentes tipos de objetos
         this.clickableObjects = this.physics.add.group();
         this.nonClickableObjects = this.physics.add.group();
@@ -529,6 +532,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     smashClickable(obj) {
+        // Prevenir double-click: marcar como já acertado
+        if (obj.getData('hit')) return;
+        obj.setData('hit', true);
+        
+        // Remover do grupo imediatamente para não ser clicável novamente
+        this.clickableObjects.remove(obj, false, false);
+        
         // Efeito de explosão com partículas
         this.createSmashExplosion(obj.x, obj.y);
         
@@ -550,6 +560,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     hitNonClickable(obj) {
+        // Prevenir double-click
+        if (obj.getData('hit')) return;
+        obj.setData('hit', true);
+        
+        // Remover do grupo imediatamente
+        this.nonClickableObjects.remove(obj, false, false);
+        
         // Efeito de partículas vermelhas ao errar
         this.createHitExplosion(obj.x, obj.y);
         
@@ -614,6 +631,27 @@ export default class GameScene extends Phaser.Scene {
         // Reduzir tempo entre spawns (menos agressivo)
         this.spawnRate = Math.max(this.minSpawnRate, this.spawnRate - 120); // Reduzido de 150
         this.spawnTimer.delay = this.spawnRate;
+    }
+
+    requestGameSession() {
+        // Solicitar token de sessão do backend para anti-cheat
+        const apiUrl = window.LEADERBOARD_API_URL;
+        if (!apiUrl) {
+            this.gameSession = null;
+            return;
+        }
+        
+        fetch(`${apiUrl}/session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            this.gameSession = data; // { sessionId, startTime, gameToken }
+        })
+        .catch(() => {
+            this.gameSession = null;
+        });
     }
 
     createParticleTextures() {
@@ -701,7 +739,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     endGame() {
-        // Ir para tela de game over sem salvar pontuação aqui
-        this.scene.start('GameOverScene', { score: this.score });
+        // Passar score e dados de sessão para a tela de game over
+        this.scene.start('GameOverScene', { 
+            score: this.score,
+            gameSession: this.gameSession
+        });
     }
 }
