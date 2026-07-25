@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const GAME_SECRET = process.env.GAME_SECRET || 'cloud-kombat-s3cr3t-2024';
+const GAME_SECRET = process.env.GAME_SECRET;
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
