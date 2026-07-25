@@ -37,12 +37,9 @@ module.exports.handler = async (event) => {
         }));
 
         const scores = (result.Items || []).map(item => ({
-            id: item.id,
             name: item.name,
             cargo: item.cargo,
-            email: item.email,
-            score: item.score,
-            timestamp: item.timestamp
+            score: item.score
         }));
 
         return {
