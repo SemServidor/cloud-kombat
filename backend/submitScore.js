@@ -6,7 +6,7 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.LEADERBOARD_TABLE;
-const GAME_SECRET = process.env.GAME_SECRET || 'cloud-kombat-s3cr3t-2024';
+const GAME_SECRET = process.env.GAME_SECRET;
 
 // Score máximo aceito
 const MAX_POSSIBLE_SCORE = 100;

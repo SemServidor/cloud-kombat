@@ -19,10 +19,8 @@ module.exports.handler = async (event) => {
     }
 
     try {
-        const limit = Math.min(
-            parseInt(event.queryStringParameters?.limit || '10', 10),
-            50
-        );
+        const parsedLimit = parseInt(event.queryStringParameters?.limit || '10', 10);
+        const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 50) : 10;
 
         // Query usando o GSI para obter os top scores ordenados
         const result = await docClient.send(new QueryCommand({
